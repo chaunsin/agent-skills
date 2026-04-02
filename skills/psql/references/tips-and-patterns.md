@@ -37,9 +37,11 @@ All `\d` commands that accept a pattern parameter use the same matching rules. U
 3. **Wildcard expansion**: `*` and `?` are expanded into regular expressions:
    - `*` becomes `.*` (any characters)
    - `?` becomes `.` (one character)
-   - All other characters are treated as regex literals
+   - Advanced regex notations like `[0-9]` work for character classes
+   - `.` in pattern position is a schema/object separator (not regex any-char)
+   - `$` is matched literally (not regex anchor)
 
-4. **Case sensitivity**: By default, matching is case-sensitive. PostgreSQL folds unquoted identifiers to lowercase, so `\dt Users` won't find a table created as `users`.
+4. **Case folding**: Unquoted letters in patterns are folded to lowercase (matching SQL identifier behavior). `\dt FOO` finds table `foo`. Double quotes prevent folding: `\dt "FOO"` finds table `FOO` (not `foo`).
 
 ### Practical Examples
 
@@ -188,16 +190,25 @@ COMMIT;
 ### Conditional Execution
 
 ```sql
--- Only run in specific environments
-\set env `echo $APP_ENV`
-
-\if :env = 'production'
+-- \if evaluates its argument as a boolean (true/false/1/0/on/off/yes/no)
+-- For string comparison, use SQL to set a boolean variable:
+SELECT current_setting('is_production', true) = 'true' AS is_prod \gset
+\if :is_prod
   \echo 'WARNING: Running on PRODUCTION'
   \prompt 'Type YES to continue: ' confirm
-  \if :confirm != 'YES'
-    \echo 'Aborted.'
-    \q
+  \if :confirm
+    \echo 'Continuing...'
+  \else
+    \echo 'Note: \if only checks boolean values, not string equality'
   \endif
+\endif
+
+-- Check if a variable is defined using :{?varname}
+\if :{?required_var}
+  \echo 'required_var is set to:' :required_var
+\else
+  \echo 'ERROR: required_var is not defined. Aborting.'
+  \q
 \endif
 ```
 
@@ -256,7 +267,8 @@ SELECT * FROM users LIMIT :batch_size;
 - Backquote expansion is NOT performed inside single-quoted strings
 - Not performed in lines skipped by `\if`/`\else`/`\elif`
 - Not performed in `\copy` arguments (the entire line is taken literally)
-- Variable references inside backquotes are NOT expanded — backquotes execute in the shell, not psql
+
+**Variable expansion inside backquotes**: psql variable references (`:varname`, `:'varname'`) ARE expanded within backquoted text before the shell command is executed. The `:'varname'` form is preferred because it properly escapes special characters for shell safety. However, `:'varname'` will error if the variable value contains carriage return or line feed characters.
 
 ```sql
 -- Get table count and use it
@@ -611,17 +623,21 @@ INSERT INTO users (id) VALUES (2);      -- This works now
 COMMIT;
 ```
 
-### Pattern Matching is Regex
+### Pattern Matching Uses Regex
 
-The `*` and `?` in \d commands are converted to regex. Special regex characters like `.`, `+`, `[`, `]` are treated as literals BUT `*` and `?` have special meaning:
+The `*` and `?` in \d commands are converted to regex (`.*` and `.`). Advanced regex like `[0-9]` works. Important differences from standard regex:
+- `.` is a schema/object separator, not any-char (use `?` for any single char)
+- `$` is matched literally, not as an anchor (pattern must match whole name anyway)
+- Within double quotes, all special characters (`*`, `?`, regex chars) are literal
 
 ```sql
 -- These work as expected
-\dt user*
-\dt user?
+\dt user*              -- matches users, user_accounts, etc.
+\dt user?              -- matches users, user1, etc.
+\dt user[0-9]*         -- matches user1, user2, user123
 
--- If your table name actually contains *, use regex escaping
-\dt table.with.dots    -- dots are literal in pattern position
+-- If your table name contains special chars, use double quotes
+\dt "table.with.dots"  -- matches literally, dots not treated as separator
 ```
 
 ### Connection String vs CLI Arguments

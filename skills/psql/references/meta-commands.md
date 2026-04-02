@@ -97,12 +97,23 @@ Text enclosed in backquotes (`` ` ``) within meta-command arguments is executed 
 
 Backquote expansion is NOT performed inside single-quoted strings or in lines that are skipped by `\if`/`\else`/`\elif`.
 
+**Variable interpolation inside backquotes**: psql variable references (`:varname`, `:'varname'`) are expanded within backquoted text before the shell command is executed. This means you can use psql variables in shell commands:
+
+```sql
+\set logfile /tmp/query.log
+\echo `cat :logfile`              -- expands :logfile before running cat
+\echo `echo :'%varname'`          -- :'...' form is preferred for shell safety
+```
+
+The `:'varname'` form (quoted) is preferred inside backquotes because it properly escapes special characters. However, `:'varname'` will error if the variable value contains carriage return (`\r`) or line feed (`\n`) characters.
+
 ### SQL Identifier Arguments
 
 Some meta-commands take arguments that describe database objects (e.g., `\df`, `\ef`). These follow special rules:
 
 - Unquoted names are folded to lowercase (matching SQL identifier behavior)
 - Double-quoted names preserve case: `\df "MyFunction"`
+- Mixed quoting: unquoted parts are folded, double-quoted parts are preserved. `FOO"BAR"BAZ` becomes `fooBARbaz`
 - Trailing `()` with optional type names specifies argument types: `\df my_func(integer, text)`
 - `*` matches all: `\df *`
 
@@ -218,7 +229,7 @@ Shows the column names and data types of the result without actually executing t
 
 ### `\gset [ prefix ]`
 
-Executes the query and stores the result in psql variables. The query must return exactly one row. Each column becomes a variable named after the column (optionally prefixed). NULL columns unset the variable rather than setting it.
+Executes the query and stores the result in psql variables. The query must return exactly one row. Each column becomes a variable named after the column (optionally prefixed). NULL columns unset the variable rather than setting it. If the query fails or does not return one row, no variables are changed.
 
 ```sql
 SELECT 'hello' AS var1, 10 AS var2
@@ -229,7 +240,7 @@ SELECT 'hello' AS var1, 10 AS var2
 
 ### `\gexec`
 
-Executes the current query, then treats each column of each row as a SQL statement to execute. NULL fields are ignored. Generated queries are sent literally — no psql meta-commands or variable references. Execution continues on error unless `ON_ERROR_STOP` is set.
+Executes the current query, then treats each column of each row as a SQL statement to execute. NULL fields are ignored. Generated queries are sent literally — no psql meta-commands or variable references. Execution continues on error unless `ON_ERROR_STOP` is set. Setting `ECHO` to `all` or `queries` is recommended when using `\gexec` to see what's being executed.
 
 ```sql
 SELECT format('CREATE INDEX ON my_table(%I)', attname)
@@ -252,10 +263,12 @@ Error is reported if multiple rows map to the same cell.
 
 ### `\bind [ parameter ] ...`
 
-Sets query parameters for the next query execution. Uses the extended query protocol.
+Sets query parameters for the next query execution. Uses the extended query protocol. Can be combined with `\g`, `\gx`, or `\gset`:
 
 ```sql
 INSERT INTO tbl1 VALUES ($1, $2) \bind 'first value' 'second value' \g
+SELECT * FROM tbl1 WHERE id = $1 \bind 'first value' \gx
+SELECT id, name FROM tbl1 WHERE id = $1 \bind 'first value' \gset result_
 ```
 
 ### `\bind_named statement_name [ parameter ] ...`
@@ -316,8 +329,8 @@ With a pattern: shows columns, types, tablespace, special attributes (NOT NULL, 
 | Command | Shows |
 |---------|-------|
 | `\da[Sx] [pattern]` | Aggregate functions with return type and input types |
-| `\df[anptwSx+] [pattern [arg_pattern ...]]` | Functions. Filter by type: `a`=agg, `n`=normal, `p`=procedure, `t`=trigger, `w`=window. Additional args match parameter type names. Use `-` as last arg_pattern to prevent matching functions with extra args. |
-| `\do[Sx+] [pattern [arg_pattern [arg_pattern]]]` | Operators with operand/result types. One arg matches prefix operators; two args match binary operators. Use `-` for unused operand. |
+| `\df[anptwSx+] [pattern [arg_pattern ...]]` | Functions. Filter by type: `a`=agg, `n`=normal, `p`=procedure, `t`=trigger, `w`=window. Additional args match parameter type names. Use `-` as last arg_pattern to prevent matching functions with extra args. Example: `\df * integer` lists functions whose first argument is `integer`. |
+| `\do[Sx+] [pattern [arg_pattern [arg_pattern]]]` | Operators with operand/result types. One arg matches prefix operators; two args match binary operators. Use `-` for unused operand. Example: `\do + integer integer` lists `+` operators with two integer args. |
 
 ### Schema and type listings
 
@@ -327,7 +340,7 @@ With a pattern: shows columns, types, tablespace, special attributes (NOT NULL, 
 | `\dT[Sx+] [pattern]` | Data types (`\dT+` shows internal name, size, enum values, permissions) |
 | `\dC[x+] [pattern]` | Type casts (`\dC+` shows leakproof status and description) |
 | `\dD[Sx+] [pattern]` | Domains (`\dD+` shows permissions and description) |
-| `\dO[Sx+] [pattern]` | Collations (only collations usable with current encoding) |
+| `\dO[Sx+] [pattern]` | Collations (only collations usable with current database encoding — results vary by database) |
 
 ### Access method and operator listings
 
@@ -343,7 +356,7 @@ With a pattern: shows columns, types, tablespace, special attributes (NOT NULL, 
 
 | Command | Shows |
 |---------|-------|
-| `\dconfig[x+] [pattern]` | Server config parameters (non-default only; use `\dconfig *` for all) |
+| `\dconfig[x+] [pattern]` | Server config parameters. Without a pattern, shows only non-default values. `\dconfig+` adds data type, context, and access privileges. |
 | `\dp[Sx] [pattern]` | Table/view/sequence privileges |
 | `\ddp[x] [pattern]` | Default access privileges |
 | `\drg[Sx] [pattern]` | Granted role memberships (ADMIN, INHERIT, SET options, grantor) |
@@ -362,10 +375,10 @@ With a pattern: shows columns, types, tablespace, special attributes (NOT NULL, 
 
 | Command | Shows |
 |---------|-------|
-| `\dX[x] [pattern]` | Extended statistics (shows status of each statistic kind) |
+| `\dX[x] [pattern]` | Extended statistics. Status column shows `defined` (requested) or NULL (not requested) per statistic kind. Use `pg_stats_ext` to check if `ANALYZE` has been run. |
 | `\dx[x+] [pattern]` | Installed extensions (`\dx+` lists all objects in each extension) |
 | `\dy[x+] [pattern]` | Event triggers |
-| `\dd[Sx] [pattern]` | Object descriptions (constraint, operator class, operator family, rule, trigger comments) |
+| `\dd[Sx] [pattern]` | Object descriptions (comments on constraints, operator classes, operator families, rules, triggers). Other object comments are shown by their respective `\d` commands. |
 
 ### Foreign data wrapper listings
 
@@ -393,8 +406,8 @@ With a pattern: shows columns, types, tablespace, special attributes (NOT NULL, 
 | `\dc[Sx+] [pattern]` | Character-set encoding conversions |
 | `\dl[x+]` | Large objects (alias for `\lo_list`) |
 | `\dL[Sx+] [pattern]` | Procedural languages |
-| `\du[Sx+] [pattern]` / `\dg[Sx+] [pattern]` | Database roles |
-| `\l[x+] [pattern]` | Databases (`\l+` shows size, default tablespace, description) |
+| `\du[Sx+] [pattern]` / `\dg[Sx+] [pattern]` | Database roles (`\du` = `\dg`, since users and groups were unified into roles) |
+| `\l[x+] [pattern]` | Databases (`\l+` shows size, default tablespace, description. Size only available for databases you can connect to.) |
 | `\sf[+] func_desc` | Function definition (read-only, `+` numbers lines from body start) |
 | `\sv[+] view_name` | View definition (read-only, `+` numbers lines) |
 
@@ -470,27 +483,41 @@ Sets options affecting query result table output. Without arguments, displays cu
 | Option | Values | Description |
 |--------|--------|-------------|
 | `border` | 0-2 (3 for latex) | Border/line style. Higher = more lines. |
-| `columns` | integer | Target width for wrapped format. 0 = use `COLUMNS` env or screen width. |
+| `columns` | integer | Target width for wrapped format. 0 = use `COLUMNS` env or screen width. Non-zero also wraps output when sent to file or pipe (normally file/pipe output is unwrapped). |
 | `csv_fieldsep` | character | CSV field separator (default: comma) |
-| `expanded` (or `x`) | `on`, `off`, `auto` | Vertical display. `auto` uses expanded when wider than screen. |
+| `expanded` (or `x`) | `on`, `off`, `auto` | Vertical display. `auto` uses expanded when wider than screen. Note: `auto` is only effective in `aligned` and `wrapped` formats. |
 | `fieldsep` | string | Field separator for unaligned output (default: `\|`) |
 | `fieldsep_zero` | — | Set field separator to NUL byte |
 | `footer` | `on`, `off` | Toggle row count footer display |
-| `format` | `aligned`, `asciidoc`, `csv`, `html`, `latex`, `latex-longtable`, `troff-ms`, `unaligned`, `wrapped` | Output format |
-| `linestyle` | `ascii`, `old-ascii`, `unicode` | Border character style |
+| `format` | `aligned`, `asciidoc`, `csv`, `html`, `latex`, `latex-longtable`, `troff-ms`, `unaligned`, `wrapped` | Output format. See format descriptions below. |
+| `linestyle` | `ascii`, `old-ascii`, `unicode` | Border character style. `ascii` uses `+`, `-`, `|` characters. `old-ascii` uses `:` and `;` for borders. `unicode` uses Unicode box-drawing characters. |
 | `null` | string | Display string for NULL values (default: empty) |
 | `numericlocale` | `on`, `off` | Locale-specific number formatting |
-| `pager` | `on`, `off`, `always` | Pager control. Uses `PSQL_PAGER` or `PAGER` env. |
+| `pager` | `on`, `off`, `always` | Pager control. Uses `PSQL_PAGER` or `PAGER` env. For `\watch` output, `PSQL_WATCH_PAGER` takes precedence over both. |
 | `pager_min_lines` | integer | Minimum lines before pager activates (default: 0) |
 | `recordsep` | string | Record separator for unaligned mode (default: newline) |
 | `recordsep_zero` | — | Set record separator to NUL byte |
-| `tableattr` (or `T`) | string | HTML: table tag attributes. latex-longtable: column widths. |
+| `tableattr` (or `T`) | string | HTML: table tag attributes (e.g., `border=1`). latex-longtable: whitespace-separated proportional column widths (e.g., `'0.2 0.2 0.6'`). |
 | `title` (or `C`) | string | Table title. Unset with no value. |
 | `tuples_only` (or `t`) | `on`, `off` | Show only data, no headers/footers |
 | `unicode_border_linestyle` | `single`, `double` | Unicode border drawing |
 | `unicode_column_linestyle` | `single`, `double` | Unicode column drawing |
 | `unicode_header_linestyle` | `single`, `double` | Unicode header drawing |
 | `xheader_width` | `full`, `column`, `page`, or integer | Max width of expanded output header |
+
+### Format Descriptions
+
+| Format | Description |
+|--------|-------------|
+| `aligned` | Standard human-readable table with column alignment (default). |
+| `wrapped` | Like `aligned` but long values wrap to fit column width. Headers with underscores are not repeated on continuation rows. |
+| `unaligned` | All columns on one line, separated by `fieldsep`. Useful for script output. |
+| `csv` | RFC 4180 compliant CSV output. Uses `csv_fieldsep` (default: comma). Safe for import into spreadsheets and other tools. |
+| `html` | HTML `<table>` markup. |
+| `asciidoc` | AsciiDoc table format for documentation. |
+| `latex` | LaTeX tabular format. |
+| `latex-longtable` | LaTeX longtable format for multi-page tables. Supports proportional column widths via `\pset tableattr` (e.g., `'0.2 0.2 0.6'`). |
+| `troff-ms` | troff ms macros table format. |
 
 ### Formatting shortcuts
 
@@ -624,7 +651,7 @@ Pipeline mode batches SQL statements into fewer network round trips for better p
 - Allowed meta-commands: `\bind`, `\bind_named`, `\parse`, `\close_prepared`
 - NOT allowed: `\g`, `\gx`, `\gdesc` (and other result-consuming commands)
 - `COPY` is not supported in pipeline mode
-- A `%P` prompt variable is available to show pipeline status
+- A `%P` prompt variable is available to show pipeline status (`on`, `off`, or `abort`)
 
 ### Example
 

@@ -255,24 +255,28 @@ INSERT INTO unique_table (id) VALUES (1);
 | Spec | Output |
 |------|--------|
 | `%/` | Current database name |
-| `%~` | Like `%/` but `~` if `==` default database |
-| `%m` | Host name (truncated at first dot) |
-| `%M` | Full host name |
+| `%~` | Like `%/` but `~` if database name equals user name (or `PGDATABASE` env var) |
+| `%m` | Host name (truncated at first dot), or `[local]` for Unix sockets |
+| `%M` | Full host name, `[local:/dir/name]` for non-default Unix sockets |
 | `%>` | Port number |
 | `%n` | User name |
+| `%S` | Current `search_path` (`?` if server doesn't report it) |
+| `%s` | Service name (from connection) |
 | `%#` | `#` if superuser, `>` otherwise |
-| `%p` | Process ID of psql backend |
-| `%R` | `=` in PROMPT1, `-` in single-line mode, `@` in COPY, `!` if session is not connected |
-| `%x` | Transaction status: empty, `*` (in transaction block), `!` (failed transaction), `?` (unknown) |
-| `%l` | Line number in current query |
-| `%d` | Line number, no spaces |
-| `%c` | Line number with spaces |
+| `%p` | Process ID of the server backend |
+| `%R` | PROMPT1: `=` normally, `^` in single-line mode, `@` if conditional stack inactive (e.g., inside skipped `\if`), `!` if not connected. PROMPT2: `-` (continuation), `*` (comment), `'` (single-quoted), `"` (double-quoted), `$` (dollar-quoted), `(` (parenthesized). PROMPT3: empty. |
+| `%w` | Whitespace matching the visible width of the last PROMPT1 output (for aligning PROMPT2) |
+| `%i` | Server recovery status: `primary` or `standby`, `?` if unavailable |
+| `%x` | Transaction status: empty (idle), `*` (in transaction block), `!` (failed transaction), `?` (unknown or no connection) |
+| `%l` | Line number inside the current statement, starting from 1 |
+| `%P` | Pipeline status: `on` (pipeline mode active), `off` (not in pipeline mode), `abort` (pipeline aborted) |
 | `%%` | Literal `%` |
+| `%[0-9]` | Character with the given decimal code |
+| `%0[0-7]` | Character with the given octal code (e.g., `%033` = ESC character) |
+| `%0x[0-9A-Fa-f]` | Character with the given hexadecimal code |
 | `%:varname:` | Value of psql variable |
-| `%`[command]`` | Output of shell command |
-| `%P` | Pipeline status. Shows the number of pending results in pipeline mode, empty string otherwise. |
-| `%\n` | Newline |
-| `%\t` | Tab |
+| `` %`[command]` `` | Output of shell command (trailing newline stripped) |
+| `%[ ... %]` | Tell Readline that the contained text is invisible (for ANSI escape codes) |
 
 **Common prompt configurations:**
 ```
@@ -283,7 +287,8 @@ INSERT INTO unique_table (id) VALUES (1);
 \set PROMPT1 '%/%x%# '
 
 -- Production-safe prompt (color-coded)
-\set PROMPT1 '%[033[1;31m%]%/%[033[0m%]%R%# '
+-- Note: %033 is octal for ESC character; %[...%] tells Readline these chars are invisible
+\set PROMPT1 '%[%033[1;31m%]%/%[%033[0m%]%R%# '
 ```
 
 ---

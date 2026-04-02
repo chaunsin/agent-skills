@@ -86,9 +86,11 @@ psql service=mydb_prod
 \c "host=newhost port=5432 dbname=mydb"         # conninfo string
 ```
 
-Key flags: `-h` host, `-p` port, `-U` user, `-d` database, `-w` no password prompt, `-W` force password prompt, `-A` unaligned output, `-L` log file.
+On connection failure: interactive mode keeps the previous connection; script mode closes it and all subsequent database commands fail until the next successful `\c`.
 
-**Precedence**: CLI flags > environment variables > ~/.pgpass > defaults. Use `~/.pgpass` instead of `PGPASSWORD` in production — `PGPASSWORD` is visible in process listings.
+Key flags: `-h` host, `-p` port, `-U` user, `-d` database, `-w` no password prompt, `-W` force password prompt, `-1` single transaction, `-f` execute file, `-c` execute command, `-t` tuples only, `-x` expanded, `-A` unaligned, `-E` echo hidden queries (`\d` internals), `-L` log file, `-X` skip `~/.psqlrc`.
+
+**Connection precedence**: CLI flags > environment variables > `pg_service.conf` > defaults. **Password precedence**: connection string/password flag > `~/.pgpass` > `PGPASSWORD` env. Use `~/.pgpass` instead of `PGPASSWORD` in production — `PGPASSWORD` is visible in process listings (`ps aux`).
 
 ### Object Inspection (\d family)
 
@@ -101,7 +103,6 @@ Key flags: `-h` host, `-p` port, `-U` user, `-d` database, `-w` no password prom
 | `\di`           | Indexes only                                                                         |
 | `\ds`           | Sequences only                                                                       |
 | `\dm`           | Materialized views only                                                              |
-| `\de`           | Foreign servers                                                                      |
 | `\det`          | Foreign tables (mnemonic: "external tables")                                       |
 | `\dT`           | Data types                                                                           |
 | `\df`           | Functions (use modifiers: `a`=aggregate, `n`=normal, `p`=procedure, `t`=trigger, `w`=window) |
@@ -158,6 +159,8 @@ Provide a name for details: `\d table_name` shows columns, types, indexes, const
 - Double quotes stop case folding and wildcard expansion: `\dt "FOO"` matches `FOO` not `foo`
 - `$` is matched literally (not regex anchor)
 - Regex chars like `[0-9]` work: `\dt user[0-9]*` matches `user1`, `user2`
+- No pattern: shows all objects visible in current `search_path` (not all objects in DB)
+- Use `*.*` to see all objects in all schemas regardless of visibility
 
 ### Query Execution
 
@@ -174,7 +177,7 @@ Provide a name for details: `\d table_name` shows columns, types, indexes, const
 | `\gexec`            | Execute each cell of result as a SQL command                 |
 | `\crosstabview`     | Display result as crosstab (pivot table)                     |
 | `\watch`            | Re-execute query periodically (see below)                    |
-| `\bind [params...]` | Use extended query protocol with parameters                  |
+| `\bind [params...]` | Use extended query protocol with parameters. Works with `\g`, `\gx`, and `\gset` |
 | `\bind_named stmt_name [params...]` | Bind named prepared statement                    |
 | `\parse stmt_name`  | Create prepared statement from current query buffer          |
 | `\close_prepared stmt_name` | Close a prepared statement                           |
@@ -208,7 +211,16 @@ COPY table FROM '/path/file.csv' WITH (FORMAT csv, HEADER true);
 \copy table TO 'file.csv' WITH (FORMAT csv, HEADER true)
 ```
 
+For `\copy ... FROM stdin`, data rows continue until a line containing only `\.` is read or EOF is reached. Use `pstdin`/`pstdout` to always read/write psql's actual stdin/stdout regardless of `\o` setting.
+
 WARNING: The `program` option executes a shell command. If constructed from user input, it can lead to command injection. Avoid string concatenation with untrusted data.
+
+**Tip**: `\copy` takes the entire rest of the line as arguments (no variable interpolation). When you need variable interpolation or multi-line queries, use SQL `COPY ... TO STDOUT` with `\g` instead:
+
+```sql
+-- This allows variable interpolation and multi-line queries
+COPY (SELECT * FROM :table WHERE id > :min_id) TO STDOUT WITH (FORMAT csv, HEADER true) \g /tmp/output.csv
+```
 
 ### Output Formatting
 
@@ -277,7 +289,9 @@ Large object OIDs are persistent references. Always associate a human-readable c
 \elif EXPR           Else-if inside \if block
 ```
 
-Variables in SQL: `:'varname'` (quoted string), `:'varname'::type` (with cast), `:varname` (unquoted).
+`\if` and `\elif` evaluate their argument as a boolean. Valid values (case-insensitive, unambiguous prefix matching): `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no`. Expressions that don't evaluate to true/false generate a warning and are treated as false. Variable references in skipped lines are NOT expanded.
+
+Variables in SQL: `:'varname'` (quoted string value, escapes embedded quotes), `:"varname"` (double-quoted identifier), `:'varname'::type` (with cast), `:varname` (unquoted — can break SQL), `:{?varname}` (tests existence, expands to TRUE/FALSE).
 
 ### Session Management
 
@@ -286,7 +300,7 @@ Variables in SQL: `:'varname'` (quoted string), `:'varname'::type` (with cast), 
 \conninfo           Display connection info (includes SSL info)
 \encoding [ENC]     Set or show client encoding
 \password [USER]    Change password (does NOT appear in command history or server log)
-\q                   Quit psql
+\q                   Quit psql (terminates only the current script, not all nested scripts)
 \r                   Reset (clear) the query buffer
 \e                   Edit query buffer in external editor
 \ef [FUNCNAME]       Edit function definition
@@ -312,22 +326,23 @@ Variables in SQL: `:'varname'` (quoted string), `:'varname'::type` (with cast), 
 \endpipeline
 ```
 
-Pipeline mode sends multiple queries in a single network round trip, reducing latency.
+Pipeline mode sends multiple queries without waiting for each result, reducing round-trip latency. All queries use the extended query protocol.
 
 **Pipeline commands:**
 - `\startpipeline` — begin pipeline block
-- `\endpipeline` — end pipeline block
+- `\endpipeline` — end pipeline block and process remaining results
 - `\sendpipeline` — append current query buffer to pipeline without waiting
 - `\syncpipeline` — send sync message without ending pipeline
 - `\flushrequest` — request server flush without sync
 - `\flush` — manually push unsent data to server
-- `\getresults [N]` — read pending results (N=0 means all)
+- `\getresults [N]` — read pending results (N=0 or omitted means all)
 
 **Pipeline limitations:**
 - `COPY` is not supported in pipeline mode
 - Meta-commands like `\g`, `\gx`, `\gdesc` are not allowed inside a pipeline
 - All queries use the extended query protocol
 - Use `\bind`, `\bind_named`, `\parse`, or `\close_prepared` within pipelines
+- A `%P` prompt variable shows pipeline status (`on`, `off`, or `abort`)
 
 ### \watch Syntax
 
@@ -338,6 +353,8 @@ Pipeline mode sends multiple queries in a single network round trip, reducing la
 - `interval` — seconds between executions (default: 2, overridable via `WATCH_INTERVAL` variable)
 - `count` — stop after N executions
 - `min_rows` — stop if query returns fewer than N rows
+
+If the query buffer is empty, `\watch` re-executes the most recently sent query.
 
 Examples:
 ```sql
@@ -403,7 +420,7 @@ SELECT * FROM users WHERE name = $1;
 \bind 'Robert' \g
 ```
 
-The `:'varname'` form (quoted) is always safer than `:varname` (unquoted), because unquoted substitution can break SQL syntax or enable injection.
+The `:'varname'` form (quoted) is always safer than `:varname` (unquoted), because unquoted substitution can break SQL syntax or enable injection. Use `:"varname"` for identifiers (table/column names) — it properly escapes embedded double quotes.
 
 ## When to Use What
 
@@ -423,6 +440,8 @@ The `:'varname'` form (quoted) is always safer than `:varname` (unquoted), becau
 | psql command help             | `\? commands`                                                |
 | Check query execution time    | `\timing on` then run query                                   |
 | Debug error details           | `\errverbose`                                                 |
+| Handle large result sets      | `\set FETCH_COUNT 1000` then run query                        |
+| Auto-savepoint on errors      | `\set ON_ERROR_ROLLBACK on` then use transactions             |
 
 ## Reference Files
 
