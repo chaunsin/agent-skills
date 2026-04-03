@@ -1,19 +1,19 @@
-# psql Meta-Commands — Complete Reference
+Part of the psql meta-command reference. See also: meta-commands-inspection.md, meta-commands-formatting.md
+
+# psql Meta-Commands — Core Reference
 
 Comprehensive reference for all psql backslash commands, organized by category. This covers every meta-command from the official PostgreSQL documentation.
 
 ## Table of Contents
 
+- [The Query Buffer](#the-query-buffer)
+- [Meta-Command Argument Parsing](#meta-command-argument-parsing)
 - [General](#general)
 - [Connection Management](#connection-management)
 - [Query Execution](#query-execution)
-- [Object Inspection (\d family)](#object-inspection-d-family)
 - [Data Import/Export](#data-importexport)
 - [Large Objects](#large-objects)
-- [Output Formatting](#output-formatting)
 - [Scripting and Control Flow](#scripting-and-control-flow)
-- [Pipeline Mode](#pipeline-mode)
-- [Session Management](#session-management)
 - [Help and Information](#help-and-information)
 
 ---
@@ -208,9 +208,9 @@ Changes the password for the specified user (default: current user). Prompts for
 Sends the current query buffer to the server for execution.
 
 - Without arguments: equivalent to a semicolon
-- With a filename: output written to file
-- With `|command`: output piped to shell command (no variable interpolation in command)
-- With `(option=value)`: one-shot formatting options (same as `\pset` options)
+- With a filename: output written to file (only if the query succeeds and returns data)
+- With `|command`: output piped to shell command (no variable interpolation in command). Only written if the query succeeds.
+**Note**: The file or command is written to only if the query successfully returns zero or more tuples — not if the query fails or is a non-data-returning SQL command.
 
 ```sql
 SELECT * FROM users \g (format=csv,footer=off) /tmp/users.csv
@@ -299,130 +299,6 @@ SELECT $1 \parse stmt1
 
 ---
 
-## Object Inspection (\d family)
-
-All `\d` commands accept these common modifiers:
-- `+` — extra info (size, description, ownership)
-- `S` — include system objects
-- `x` — expanded display (must follow `S` or `+`, NOT immediately after `\d`)
-
-**Important**: The `x` modifier for expanded display must appear after `S` or `+` (e.g., `\dt+x`), because `\dx` is a separate command that lists installed extensions. Writing `\dx` when you meant expanded display will show extensions instead.
-
-All accept a pattern parameter with wildcard matching (`*`, `?`, regex). See Patterns section below.
-
-### `\d[Sx+] [ pattern ]`
-
-Without a pattern: equivalent to `\dtvmsE` (lists all visible tables, views, materialized views, sequences, and foreign tables).
-
-With a pattern: shows columns, types, tablespace, special attributes (NOT NULL, defaults), indexes, constraints, rules, triggers. For foreign tables, shows the foreign server.
-
-`\d+` adds: column comments, OID presence, view definition, replica identity, access method.
-
-### Table-type listing commands
-
-`\dE` / `\di` / `\dm` / `\ds` / `\dt` / `\dv` — List foreign tables, indexes, materialized views, sequences, tables, or views. Combine letters: `\dti` lists both tables and indexes.
-
-`\d+` adds: persistence status (permanent/temporary/unlogged), physical size on disk, description.
-
-### Aggregate and function listings
-
-| Command | Shows |
-|---------|-------|
-| `\da[Sx] [pattern]` | Aggregate functions with return type and input types |
-| `\df[anptwSx+] [pattern [arg_pattern ...]]` | Functions. Filter by type: `a`=agg, `n`=normal, `p`=procedure, `t`=trigger, `w`=window. Additional args match parameter type names. Use `-` as last arg_pattern to prevent matching functions with extra args. Example: `\df * integer` lists functions whose first argument is `integer`. |
-| `\do[Sx+] [pattern [arg_pattern [arg_pattern]]]` | Operators with operand/result types. One arg matches prefix operators; two args match binary operators. Use `-` for unused operand. Example: `\do + integer integer` lists `+` operators with two integer args. |
-
-### Schema and type listings
-
-| Command | Shows |
-|---------|-------|
-| `\dn[Sx+] [pattern]` | Schemas (namespaces) |
-| `\dT[Sx+] [pattern]` | Data types (`\dT+` shows internal name, size, enum values, permissions) |
-| `\dC[x+] [pattern]` | Type casts (`\dC+` shows leakproof status and description) |
-| `\dD[Sx+] [pattern]` | Domains (`\dD+` shows permissions and description) |
-| `\dO[Sx+] [pattern]` | Collations (only collations usable with current database encoding — results vary by database) |
-
-### Access method and operator listings
-
-| Command | Shows |
-|---------|-------|
-| `\dA[x+] [pattern]` | Access methods |
-| `\dAc[x+] [am_pattern [type_pattern]]` | Operator classes |
-| `\dAf[x+] [am_pattern [type_pattern]]` | Operator families |
-| `\dAo[x+] [am_pattern [family_pattern]]` | Operators in families |
-| `\dAp[x+] [am_pattern [family_pattern]]` | Support functions in families |
-
-### Configuration and privilege listings
-
-| Command | Shows |
-|---------|-------|
-| `\dconfig[x+] [pattern]` | Server config parameters. Without a pattern, shows only non-default values. `\dconfig+` adds data type, context, and access privileges. |
-| `\dp[Sx] [pattern]` | Table/view/sequence privileges |
-| `\ddp[x] [pattern]` | Default access privileges |
-| `\drg[Sx] [pattern]` | Granted role memberships (ADMIN, INHERIT, SET options, grantor) |
-| `\drds[x] [role_pattern [db_pattern]]` | Per-role and per-database config settings |
-| `\z[Sx] [pattern]` | Alias for `\dp` |
-
-### Replication and partition listings
-
-| Command | Shows |
-|---------|-------|
-| `\dP[itnx+] [pattern]` | Partitioned relations (`t`=tables, `i`=indexes, `n`=nested shows parent) |
-| `\dRp[x+] [pattern]` | Replication publications (`\dRp+` shows associated tables/schemas) |
-| `\dRs[x+] [pattern]` | Replication subscriptions (`\dRs+` shows additional properties) |
-
-### Extended statistics, extensions, and more
-
-| Command | Shows |
-|---------|-------|
-| `\dX[x] [pattern]` | Extended statistics. Status column shows `defined` (requested) or NULL (not requested) per statistic kind. Use `pg_stats_ext` to check if `ANALYZE` has been run. |
-| `\dx[x+] [pattern]` | Installed extensions (`\dx+` lists all objects in each extension) |
-| `\dy[x+] [pattern]` | Event triggers |
-| `\dd[Sx] [pattern]` | Object descriptions (comments on constraints, operator classes, operator families, rules, triggers). Other object comments are shown by their respective `\d` commands. |
-
-### Foreign data wrapper listings
-
-| Command | Shows |
-|---------|-------|
-| `\des[x+] [pattern]` | Foreign servers |
-| `\det[x+] [pattern]` | Foreign tables (`\det+` shows options and description) |
-| `\deu[x+] [pattern]` | User mappings (CAUTION: `\deu+` may show passwords) |
-| `\dew[x+] [pattern]` | Foreign-data wrappers |
-
-### Text search listings
-
-| Command | Shows |
-|---------|-------|
-| `\dF[x+] [pattern]` | Text search configurations (`\dF+` shows parser and dictionary list per token type) |
-| `\dFd[x+] [pattern]` | Text search dictionaries |
-| `\dFp[x+] [pattern]` | Text search parsers (`\dFp+` shows functions and recognized token types) |
-| `\dFt[x+] [pattern]` | Text search templates |
-
-### Other object listings
-
-| Command | Shows |
-|---------|-------|
-| `\db[x+] [pattern]` | Tablespaces (`\db+` shows options, size, permissions, description) |
-| `\dc[Sx+] [pattern]` | Character-set encoding conversions |
-| `\dl[x+]` | Large objects (alias for `\lo_list`) |
-| `\dL[Sx+] [pattern]` | Procedural languages |
-| `\du[Sx+] [pattern]` / `\dg[Sx+] [pattern]` | Database roles (`\du` = `\dg`, since users and groups were unified into roles) |
-| `\l[x+] [pattern]` | Databases (`\l+` shows size, default tablespace, description. Size only available for databases you can connect to.) |
-| `\sf[+] func_desc` | Function definition (read-only, `+` numbers lines from body start) |
-| `\sv[+] view_name` | View definition (read-only, `+` numbers lines) |
-
-### Pattern matching rules
-
-All `\d` commands that accept a pattern use the same matching system:
-
-1. **Case folding**: Unquoted letters are folded to lowercase (like SQL identifiers). Double quotes prevent folding.
-2. **Wildcards**: `*` matches any character sequence, `?` matches any single character. Within double quotes, these are literal.
-3. **Dot separator**: A dot (`.`) separates schema from object name. Two dots separate database.schema.object (database must match current connection).
-4. **Regex**: Advanced patterns like `[0-9]` work. `.` is a separator (not regex any-char), `*` → `.*`, `?` → `.`, `$` is literal. Within double quotes, all regex specials are literal.
-5. **No pattern**: Shows all objects visible in the current schema search path (equivalent to `*`). Use `*.*` to see all objects regardless of visibility.
-
----
-
 ## Data Import/Export
 
 ### `\copy`
@@ -474,65 +350,6 @@ Deletes the large object with the specified OID.
 
 ---
 
-## Output Formatting
-
-### `\pset [ option [ value ] ]`
-
-Sets options affecting query result table output. Without arguments, displays current settings.
-
-| Option | Values | Description |
-|--------|--------|-------------|
-| `border` | 0-2 (3 for latex) | Border/line style. Higher = more lines. |
-| `columns` | integer | Target width for wrapped format. 0 = use `COLUMNS` env or screen width. Non-zero also wraps output when sent to file or pipe (normally file/pipe output is unwrapped). |
-| `csv_fieldsep` | character | CSV field separator (default: comma) |
-| `expanded` (or `x`) | `on`, `off`, `auto` | Vertical display. `auto` uses expanded when wider than screen. Note: `auto` is only effective in `aligned` and `wrapped` formats. |
-| `fieldsep` | string | Field separator for unaligned output (default: `\|`) |
-| `fieldsep_zero` | — | Set field separator to NUL byte |
-| `footer` | `on`, `off` | Toggle row count footer display |
-| `format` | `aligned`, `asciidoc`, `csv`, `html`, `latex`, `latex-longtable`, `troff-ms`, `unaligned`, `wrapped` | Output format. See format descriptions below. |
-| `linestyle` | `ascii`, `old-ascii`, `unicode` | Border character style. `ascii` uses `+`, `-`, `|` characters. `old-ascii` uses `:` and `;` for borders. `unicode` uses Unicode box-drawing characters. |
-| `null` | string | Display string for NULL values (default: empty) |
-| `numericlocale` | `on`, `off` | Locale-specific number formatting |
-| `pager` | `on`, `off`, `always` | Pager control. Uses `PSQL_PAGER` or `PAGER` env. For `\watch` output, `PSQL_WATCH_PAGER` takes precedence over both. |
-| `pager_min_lines` | integer | Minimum lines before pager activates (default: 0) |
-| `recordsep` | string | Record separator for unaligned mode (default: newline) |
-| `recordsep_zero` | — | Set record separator to NUL byte |
-| `tableattr` (or `T`) | string | HTML: table tag attributes (e.g., `border=1`). latex-longtable: whitespace-separated proportional column widths (e.g., `'0.2 0.2 0.6'`). |
-| `title` (or `C`) | string | Table title. Unset with no value. |
-| `tuples_only` (or `t`) | `on`, `off` | Show only data, no headers/footers |
-| `unicode_border_linestyle` | `single`, `double` | Unicode border drawing |
-| `unicode_column_linestyle` | `single`, `double` | Unicode column drawing |
-| `unicode_header_linestyle` | `single`, `double` | Unicode header drawing |
-| `xheader_width` | `full`, `column`, `page`, or integer | Max width of expanded output header |
-
-### Format Descriptions
-
-| Format | Description |
-|--------|-------------|
-| `aligned` | Standard human-readable table with column alignment (default). |
-| `wrapped` | Like `aligned` but long values wrap to fit column width. Headers with underscores are not repeated on continuation rows. |
-| `unaligned` | All columns on one line, separated by `fieldsep`. Useful for script output. |
-| `csv` | RFC 4180 compliant CSV output. Uses `csv_fieldsep` (default: comma). Safe for import into spreadsheets and other tools. |
-| `html` | HTML `<table>` markup. |
-| `asciidoc` | AsciiDoc table format for documentation. |
-| `latex` | LaTeX tabular format. |
-| `latex-longtable` | LaTeX longtable format for multi-page tables. Supports proportional column widths via `\pset tableattr` (e.g., `'0.2 0.2 0.6'`). |
-| `troff-ms` | troff ms macros table format. |
-
-### Formatting shortcuts
-
-| Shortcut | Equivalent |
-|----------|-----------|
-| `\a` | `\pset format unaligned` (toggle) |
-| `\C [title]` | `\pset title` |
-| `\f [string]` | `\pset fieldsep` |
-| `\H` | `\pset format html` (toggle) |
-| `\t` | `\pset tuples_only` (toggle) |
-| `\T table_options` | `\pset tableattr` |
-| `\x [on\|off\|auto]` | `\pset expanded` |
-
----
-
 ## Scripting and Control Flow
 
 ### `\i` / `\include` filename
@@ -547,9 +364,13 @@ Like `\i`, but resolves relative paths from the directory of the currently execu
 
 ### `\o` / `\out [ filename ]` / `\o [ |command ]`
 
-Redirects query output (tables, command responses, notices, `\d` output) to file or pipe. `\o` without arguments resets to stdout. When argument starts with `|`, the rest is passed literally to the shell (no variable interpolation).
+Redirects query output to file or pipe. `\o` without arguments resets to stdout. When argument starts with `|`, the rest is passed literally to the shell (no variable interpolation).
 
-Note: `\echo` goes to stdout (not affected by `\o`); use `\qecho` for redirected output.
+**What gets redirected**: "Query results" includes tables, command responses, notices, and output from `\d` commands — but **not error messages**. Error messages always go to stderr.
+
+**What doesn't get redirected**: `\echo` outputs to stdout (not affected by `\o`); use `\qecho` for redirected output.
+
+**Tip**: To intersperse text between query results in a redirected output file, use `\qecho`.
 
 ### `\echo text [ ... ]`
 
@@ -625,92 +446,6 @@ SELECT EXISTS(SELECT 1 FROM customer WHERE customer_id = 123) as is_customer,
 ```
 
 Variable references in skipped lines are NOT expanded. Backquote expansion is NOT performed in skipped lines.
-
----
-
-## Pipeline Mode
-
-Pipeline mode batches SQL statements into fewer network round trips for better performance. Available in PostgreSQL 14+.
-
-### Pipeline commands
-
-| Command | Description |
-|---------|-------------|
-| `\startpipeline` | Begin a pipeline block |
-| `\endpipeline` | End a pipeline block and process remaining results |
-| `\sendpipeline` | Append current query buffer to pipeline without waiting for results |
-| `\syncpipeline` | Send a sync message without ending the pipeline |
-| `\flushrequest` | Request server flush without sync |
-| `\flush` | Manually push unsent data to server |
-| `\getresults [N]` | Read pending results (N=0 or omitted = all) |
-
-### Pipeline rules
-
-- All queries in pipeline mode use the extended query protocol
-- Queries are appended with semicolons or `\sendpipeline`
-- Allowed meta-commands: `\bind`, `\bind_named`, `\parse`, `\close_prepared`
-- NOT allowed: `\g`, `\gx`, `\gdesc` (and other result-consuming commands)
-- `COPY` is not supported in pipeline mode
-- A `%P` prompt variable is available to show pipeline status (`on`, `off`, or `abort`)
-
-### Example
-
-```sql
-\startpipeline
-  SELECT * FROM pg_class;
-  SELECT 1 \bind \sendpipeline
-  \flushrequest
-  \getresults
-\endpipeline
-```
-
----
-
-## Session Management
-
-### `\e` / `\edit [ filename ] [ line_number ]`
-
-Opens the query buffer (or a file) in the external editor. On save, the buffer is re-parsed. Complete queries are immediately executed. The cursor is positioned on the specified line number. See `$EDITOR` / `$VISUAL` for editor configuration.
-
-### `\ef [ function_description [ line_number ] ]`
-
-Edits a function or procedure definition as a `CREATE OR REPLACE FUNCTION/PROCEDURE` command. Specify function by name or name and argument types. Without arguments, shows a blank template. Line number positions within the function body.
-
-Unlike most meta-commands, the entire line is the argument — no variable interpolation.
-
-### `\ev [ view_name [ line_number ] ]`
-
-Edits a view definition as a `CREATE OR REPLACE VIEW` command. Without arguments, shows a blank template.
-
-### `\cd [ directory ]`
-
-Changes the current working directory. Without an argument, changes to the home directory.
-
-```sql
-\cd /tmp
-\! pwd           -- /tmp
-\cd              -- back to home directory
-```
-
-### `\r` / `\reset`
-
-Clears the query buffer.
-
-### `\s [ filename ]`
-
-Prints command history to file or stdout. Requires Readline support.
-
-### `\timing [ on | off ]`
-
-Toggles (or explicitly sets) display of query execution time. Shown in milliseconds; intervals > 1s also show minutes:seconds, hours, days as needed.
-
-### `\errverbose`
-
-Repeats the most recent server error message at maximum verbosity (as if `VERBOSITY=verbose` and `SHOW_CONTEXT=always`).
-
-### `\restrict restrict_key` / `\unrestrict restrict_key`
-
-Enter/exit restricted mode where only `\unrestrict` is allowed. Key must be alphanumeric. Primarily used by `pg_dump`/`pg_restore`.
 
 ---
 

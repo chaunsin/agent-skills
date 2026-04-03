@@ -9,8 +9,8 @@ description: >
   execution, table inspection, schema exploration, database administration from CLI, or psql
   configuration and customization. Even if the user doesn't explicitly say "psql" but is working
   with PostgreSQL from the command line, this skill is relevant.
+auth: chaunsin
 ---
-
 # psql — PostgreSQL Interactive Terminal
 
 psql is PostgreSQL's feature-rich interactive terminal. It lets you write and execute queries, inspect database objects, import/export data, script batch operations, and customize output formatting — all from the command line.
@@ -94,35 +94,35 @@ Key flags: `-h` host, `-p` port, `-U` user, `-d` database, `-w` no password prom
 
 ### Object Inspection (\d family)
 
-| Command           | Shows                                                                                |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| `\d`            | All tables, views, materialized views, sequences, foreign tables (equiv.`\dtvmsE`) |
-| `\dP`           | Partitioned tables                                                                   |
-| `\dt`           | Tables only                                                                          |
-| `\dv`           | Views only                                                                          |
-| `\di`           | Indexes only                                                                         |
-| `\ds`           | Sequences only                                                                       |
-| `\dm`           | Materialized views only                                                              |
-| `\det`          | Foreign tables (mnemonic: "external tables")                                       |
-| `\dT`           | Data types                                                                           |
-| `\df`           | Functions (use modifiers: `a`=aggregate, `n`=normal, `p`=procedure, `t`=trigger, `w`=window) |
-| `\da`           | Aggregate functions                                                                  |
-| `\dn`           | Schemas                                                                              |
-| `\du` / `\dg` | Roles                                                                                |
-| `\db`           | Tablespaces                                                                          |
-| `\dc`           | Conversions                                                                          |
-| `\dD`           | Domains                                                                              |
-| `\dl`           | Large objects (alias for `\lo_list`)                                               |
-| `\dF`           | Text search configurations                                                           |
-| `\dFd`          | Text search dictionaries                                                             |
-| `\dFp`          | Text search parsers                                                                  |
-| `\dFt`          | Text search templates                                                                |
-| `\des`          | Foreign servers                                                                      |
-| `\deu`          | User mappings                                                                        |
-| `\dew`          | Foreign-data wrappers                                                                |
-| `\dp`           | Privileges (GRANT/REVOKE)                                                            |
-| `\drds`         | Per-role and per-database configuration settings                                     |
-| `\l`            | List databases (accepts pattern: `\l test*`)                                       |
+| Command           | Shows                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| `\d`            | All tables, views, materialized views, sequences, foreign tables (equiv.`\dtvmsE`)                  |
+| `\dP`           | Partitioned tables                                                                                    |
+| `\dt`           | Tables only                                                                                           |
+| `\dv`           | Views only                                                                                            |
+| `\di`           | Indexes only                                                                                          |
+| `\ds`           | Sequences only                                                                                        |
+| `\dm`           | Materialized views only                                                                               |
+| `\det`          | Foreign tables (mnemonic: "external tables")                                                          |
+| `\dT`           | Data types                                                                                            |
+| `\df`           | Functions (use modifiers:`a`=aggregate, `n`=normal, `p`=procedure, `t`=trigger, `w`=window) |
+| `\da`           | Aggregate functions                                                                                   |
+| `\dn`           | Schemas                                                                                               |
+| `\du` / `\dg` | Roles                                                                                                 |
+| `\db`           | Tablespaces                                                                                           |
+| `\dc`           | Conversions                                                                                           |
+| `\dD`           | Domains                                                                                               |
+| `\dl`           | Large objects (alias for `\lo_list`)                                                                |
+| `\dF`           | Text search configurations                                                                            |
+| `\dFd`          | Text search dictionaries                                                                              |
+| `\dFp`          | Text search parsers                                                                                   |
+| `\dFt`          | Text search templates                                                                                 |
+| `\des`          | Foreign servers                                                                                       |
+| `\deu`          | User mappings                                                                                         |
+| `\dew`          | Foreign-data wrappers                                                                                 |
+| `\dp`           | Privileges (GRANT/REVOKE)                                                                             |
+| `\drds`         | Per-role and per-database configuration settings                                                      |
+| `\l`            | List databases (accepts pattern:`\l test*`)                                                         |
 
 | `\dA`           | Access methods                                           |
 | `\dAc` / `\dAf` / `\dAo` / `\dAp` | Operator classes, families, operators, support functions |
@@ -164,24 +164,24 @@ Provide a name for details: `\d table_name` shows columns, types, indexes, const
 
 ### Query Execution
 
-| Command               | Action                                                       |
-| --------------------- | ------------------------------------------------------------ |
-| `;`                 | Execute the current query buffer                             |
-| `\g`                | Execute (like `;`, but can add options)                    |
-| `\gx`               | Execute with expanded output (like `\g`, forces `\x on`) |
-| `\g filename`       | Execute and send output to file                              |
-| `\g \| command`      | Execute and pipe output to shell command                     |
-| `\g (format=csv,footer=off) file` | Execute with one-shot formatting options        |
-| `\gdesc`            | Describe result columns without executing                    |
-| `\gset [prefix]`    | Execute and store results in psql variables                  |
-| `\gexec`            | Execute each cell of result as a SQL command                 |
-| `\crosstabview`     | Display result as crosstab (pivot table)                     |
-| `\watch`            | Re-execute query periodically (see below)                    |
-| `\bind [params...]` | Use extended query protocol with parameters. Works with `\g`, `\gx`, and `\gset` |
-| `\bind_named stmt_name [params...]` | Bind named prepared statement                    |
-| `\parse stmt_name`  | Create prepared statement from current query buffer          |
-| `\close_prepared stmt_name` | Close a prepared statement                           |
-| `\;`                | Append semicolon to buffer without executing                 |
+| Command                               | Action                                                                                 |
+| ------------------------------------- | -------------------------------------------------------------------------------------- |
+| `;`                                 | Execute the current query buffer                                                       |
+| `\g`                                | Execute (like `;`, but can add options)                                              |
+| `\gx`                               | Execute with expanded output (like `\g`, forces `\x on`)                           |
+| `\g filename`                       | Execute and send output to file                                                        |
+| `\g \| command`                      | Execute and pipe output to shell command                                               |
+| `\g (format=csv,footer=off) file`   | Execute with one-shot formatting options                                               |
+| `\gdesc`                            | Describe result columns without executing                                              |
+| `\gset [prefix]`                    | Execute and store results in psql variables                                            |
+| `\gexec`                            | Execute each cell of result as a SQL command                                           |
+| `\crosstabview`                     | Display result as crosstab (pivot table)                                               |
+| `\watch`                            | Re-execute query periodically (see below)                                              |
+| `\bind [params...]`                 | Use extended query protocol with parameters. Works with `\g`, `\gx`, and `\gset` |
+| `\bind_named stmt_name [params...]` | Bind named prepared statement                                                          |
+| `\parse stmt_name`                  | Create prepared statement from current query buffer                                    |
+| `\close_prepared stmt_name`         | Close a prepared statement                                                             |
+| `\;`                                | Append semicolon to buffer without executing                                           |
 
 ### Data Import/Export
 
@@ -329,6 +329,7 @@ Variables in SQL: `:'varname'` (quoted string value, escapes embedded quotes), `
 Pipeline mode sends multiple queries without waiting for each result, reducing round-trip latency. All queries use the extended query protocol.
 
 **Pipeline commands:**
+
 - `\startpipeline` — begin pipeline block
 - `\endpipeline` — end pipeline block and process remaining results
 - `\sendpipeline` — append current query buffer to pipeline without waiting
@@ -338,6 +339,7 @@ Pipeline mode sends multiple queries without waiting for each result, reducing r
 - `\getresults [N]` — read pending results (N=0 or omitted means all)
 
 **Pipeline limitations:**
+
 - `COPY` is not supported in pipeline mode
 - Meta-commands like `\g`, `\gx`, `\gdesc` are not allowed inside a pipeline
 - All queries use the extended query protocol
@@ -357,6 +359,7 @@ Pipeline mode sends multiple queries without waiting for each result, reducing r
 If the query buffer is empty, `\watch` re-executes the most recently sent query.
 
 Examples:
+
 ```sql
 SELECT * FROM pg_stat_activity WHERE state = 'active';
 \watch interval=5 count=10      -- every 5s, stop after 10 runs
@@ -367,12 +370,12 @@ SELECT count(*) FROM queue WHERE status = 'pending';
 
 ### Exit Codes
 
-| Code | Meaning |
-| ---- | ------- |
-| 0    | Successful completion |
+| Code | Meaning                                                         |
+| ---- | --------------------------------------------------------------- |
+| 0    | Successful completion                                           |
 | 1    | A fatal error occurred (server error, connection failure, etc.) |
-| 2    | Connection failed (could not connect to the server) |
-| 3    | Script execution ended due to ON_ERROR_STOP |
+| 2    | Connection failed (could not connect to the server)             |
+| 3    | Script execution ended due to ON_ERROR_STOP                     |
 
 ## Security Considerations
 
@@ -394,14 +397,14 @@ DELETE FROM users WHERE condition RETURNING *;  -- see what was deleted
 
 ### Dangerous Commands Requiring Extra Caution
 
-| Command/Pattern | Risk | Mitigation |
-|-----------------|------|------------|
-| `\gexec` | Executes generated SQL without confirmation | Always inspect the generating query first by running it without `\gexec`; set `ON_ERROR_STOP on` |
-| `\! command` | Arbitrary shell execution | No sandboxing; commands run with psql user's full privileges |
-| `\copy ... program 'cmd'` | Shell command injection if filename comes from user input | Never concatenate untrusted input into the `program` string |
-| `\deu+` | May display remote user passwords | Avoid using `\deu+` in shared/piped output; use `\deu` without `+` |
-| `DELETE`/`UPDATE` without `WHERE` | Affects every row in the table | Always use `WHERE`; wrap in `BEGIN`/`ROLLBACK` to preview |
-| `DROP DATABASE/TABLE` | Irreversible data loss | Verify you're on the correct database with `\conninfo` first |
+| Command/Pattern                         | Risk                                                      | Mitigation                                                                                           |
+| --------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `\gexec`                              | Executes generated SQL without confirmation               | Always inspect the generating query first by running it without `\gexec`; set `ON_ERROR_STOP on` |
+| `\! command`                          | Arbitrary shell execution                                 | No sandboxing; commands run with psql user's full privileges                                         |
+| `\copy ... program 'cmd'`             | Shell command injection if filename comes from user input | Never concatenate untrusted input into the `program` string                                        |
+| `\deu+`                               | May display remote user passwords                         | Avoid using `\deu+` in shared/piped output; use `\deu` without `+`                             |
+| `DELETE`/`UPDATE` without `WHERE` | Affects every row in the table                            | Always use `WHERE`; wrap in `BEGIN`/`ROLLBACK` to preview                                      |
+| `DROP DATABASE/TABLE`                 | Irreversible data loss                                    | Verify you're on the correct database with `\conninfo` first                                       |
 
 ### Variable Interpolation Safety
 
@@ -438,18 +441,32 @@ The `:'varname'` form (quoted) is always safer than `:varname` (unquoted), becau
 | Batch-insert many rows        | Use `\startpipeline` / `\endpipeline`                      |
 | SQL syntax help               | `\h CREATE TABLE`                                            |
 | psql command help             | `\? commands`                                                |
-| Check query execution time    | `\timing on` then run query                                   |
-| Debug error details           | `\errverbose`                                                 |
-| Handle large result sets      | `\set FETCH_COUNT 1000` then run query                        |
-| Auto-savepoint on errors      | `\set ON_ERROR_ROLLBACK on` then use transactions             |
+| Check query execution time    | `\timing on` then run query                                  |
+| Debug error details           | `\errverbose`                                                |
+| Handle large result sets      | `\set FETCH_COUNT 1000` then run query                       |
+| Auto-savepoint on errors      | `\set ON_ERROR_ROLLBACK on` then use transactions            |
 
-## Reference Files
-
-For detailed information beyond this quick reference, see:
-
-- **`references/meta-commands.md`** — Complete meta-command reference with all options, arguments, and behavior details. Consult this when you need the full specification of any backslash command.
+- **`references/meta-commands-core.md`** — Core meta-commands reference: query buffer, argument parsing, connection management, query execution (`\g`, `\gx`, `\gdesc`, \gset `, `\gexec `, `\crosstabview `, `\bind `, `\bind_named `, \parse`, \close_prepared), scripting, data import/export (`\copy`), large objects operations). Consult this when you need the full specification of any backslash command.
+  the `references/meta-commands-core.md` for context).
+- **`references/meta-commands-inspection.md`** — Object inspection commands (`\d` family) with pattern matching rules. Consult this when you need details about any `\d` command or related lookup.
+  the `references/meta-commands-inspection.md` for context.
+  When looking up table structure, index, or foreign keys information.
+  Also see `references/meta-commands-formatting.md`.
+- **`references/meta-commands-formatting.md`** — Output formatting (`\pset` options, format descriptions), pipeline mode commands, and session management (`\e`, `\ef`, `\ev`, `\cd`, `\r`, `\s`, `\timing`, `\errverbose`, `\restrict`/`\unrestrict`). See also: `references/meta-commands-core.md` for the other two parts of the series.
 - **`references/cli-options-and-variables.md`** — All CLI flags, environment variables, and psql internal variables (AUTOCOMMIT, ON_ERROR_STOP, ECHO, etc.). Refer to this when configuring psql startup behavior or writing scripts that depend on variable state.
-- **`references/tips-and-patterns.md`** — Practical workflows, pattern matching rules for \d commands, common scripting patterns, and best practices. Useful when translating a task into the right sequence of psql commands.
+  Has prompt customization, examples. See also: `references/cli-options-and-variables.md`.- **`references/tips-workflows.md`** — Practical workflows, pattern matching examples. scripting patterns, and data import/export patterns. Useful when translating a task into the right sequence of psql commands.
+  Consult this when you need workflows examples or data migration guidance.
+  See also: `references/tips-advanced.md`.
+- **`references/tips-advanced.md`** — Performance tips, debugging/introspection, safety best practices. and common gotchas. Consult this for lock analysis, query plan inspection, and troubleshooting.
+
+ See also: `references/tips-workflow.md` and `references/tips-advanced.md` for context.
+
+- **`references/meta-commands-core.md`** — Core meta-commands: query buffer, argument parsing, connection management, query execution, scripting, and data import/export. The essential reference for daily psql usage.
+- **`references/meta-commands-inspection.md`** — All `\d` family commands for object inspection (tables, indexes, views, functions, etc.) and pattern matching rules. Consult this when exploring database schema.
+- **`references/meta-commands-formatting.md`** — Output formatting (`\pset` options), pipeline mode, and session management (`\e`, `\ef`, `\ev`, `\timing`, etc.).
+- **`references/cli-options-and-variables.md`** — All CLI flags, environment variables, and psql internal variables (AUTOCOMMIT, ON_ERROR_STOP, ECHO, etc.). Refer to this when configuring psql startup behavior or writing scripts that depend on variable state.
+- **`references/tips-workflows.md`** — Practical workflows, pattern matching examples, scripting patterns, and data import/export patterns. Useful when translating a task into the right sequence of psql commands.
+- **`references/tips-advanced.md`** — Performance tips, debugging/introspection, safety best practices, and common gotchas. Consult this for lock analysis, query plan inspection, and troubleshooting.
 
 ## External References
 
