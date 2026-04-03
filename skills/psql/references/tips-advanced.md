@@ -130,22 +130,25 @@ psql -1 -f migration.sql mydb
 
 ```bash
 # BAD: Password visible in process list, env vars
-PGPASSWORD=secret psql -c "SELECT 1" mydb
-
-# GOOD: Use ~/.pgpass
+PGPASSWORD=secret psql -c "SELECT 1" mydb# GOOD: Use ~/.pgpass (manually edit to avoid shell history)
 touch ~/.pgpass && chmod 600 ~/.pgpass
-echo "localhost:5432:mydb:myuser:mysecret" >> ~/.pgpass
+# Then edit ~/.pgpass and your add:
+# hostname:port:database:username:password
+# Example: localhost:5432:mydb:myuser:mysecret
 psql -c "SELECT 1" mydb
 ```
 
 ### Preview Before Executing
 
 ```sql
--- See what a migration will do without running it
-\set ECHO_HIDDEN noexec
+-- Dry-run a script to see what commands will execute (shows SQL, does NOT execute)
+\set ECHO all
+BEGIN;
+-- Paste or review migration SQL here, then ROLLBACK instead of COMMIT
 \i migration.sql
+ROLLBACK;
 
--- Or use \gdesc to check result columns
+-- Or use \gdesc to check result columns without executing
 SELECT * FROM complex_view \gdesc
 ```
 

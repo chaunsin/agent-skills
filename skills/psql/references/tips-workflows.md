@@ -330,8 +330,8 @@ psql -A -t -c "SELECT count(*) FROM users" mydb
 psql -A -t -c "SELECT json_agg(t) FROM (SELECT id, name FROM users) t" mydb
 
 # NUL-separated (for xargs -0)
-# WARNING: Ensure filenames from the database are trusted — untrusted input could delete arbitrary files
-psql -A -0 -t -c "SELECT filename FROM files" mydb | xargs -0 rm
+# WARNING: Ensure filenames from the database are trusted before piping to destructive commands
+psql -A -0 -t -c "SELECT filename FROM files_to_process" mydb | xargs -0 process_file
 ```
 
 ### In-Session Output Control
@@ -345,7 +345,7 @@ SELECT id, name, email FROM users;
 \pset format aligned
 
 -- Using \g options (no need to change global settings)
-SELECT * FROM users \g (format=csv, footer=off) /tmp/users.csv
+SELECT * FROM users \g (format=csv footer=off) /tmp/users.csv
 
 -- Pipe to a command
 SELECT pg_database_size(current_database()) \g | numfmt --to=iec
@@ -387,11 +387,9 @@ SELECT string_agg(column_name, ', ') FROM information_schema.columns WHERE table
 -- Query export
 \copy (SELECT id, name, created_at FROM users WHERE active ORDER BY created_at DESC) TO 'active_users.csv' WITH (FORMAT csv, HEADER true)
 
--- Compressed export
-\copy table_name TO 'program ''gzip > export.csv.gz''' WITH (FORMAT csv, HEADER true)
-
--- Import from compressed
-\copy table_name FROM 'program ''gzip -dc import.csv.gz''' WITH (FORMAT csv, HEADER true)
+-- Compressed export (pipe through gzip, no intermediate file)
+\copy table_name TO program 'gzip > export.csv.gz' WITH (FORMAT csv, HEADER true)-- Import from compressed (decompress on the fly)
+\copy table_name FROM program 'gzip -dc import.csv.gz' WITH (FORMAT csv, HEADER true)
 ```
 
 ### Database Migration Between Servers

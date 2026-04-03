@@ -214,7 +214,7 @@ Sends the current query buffer to the server for execution.
 **Note**: The file or command is written to only if the query successfully returns zero or more tuples — not if the query fails or is a non-data-returning SQL command. This means even an empty result set (0 rows) will trigger output.
 
 ```sql
-SELECT * FROM users \g (format=csv,footer=off) /tmp/users.csv
+SELECT * FROM users \g (format=csv footer=off) /tmp/users.csv
 SELECT count(*) FROM users \g | wc -l
 ```
 

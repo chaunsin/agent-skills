@@ -175,7 +175,7 @@ Provide a name for details: `\d table_name` shows columns, types, indexes, const
 | `\gx`                               | Execute with expanded output (like `\g`, forces `\x on`)                           |
 | `\g filename`                       | Execute and send output to file                                                        |
 | `\g \| command`                      | Execute and pipe output to shell command                                               |
-| `\g (format=csv,footer=off) file`   | Execute with one-shot formatting options                                               |
+| `\g (format=csv footer=off) file`   | Execute with one-shot formatting options                                               |
 | `\gdesc`                            | Describe result columns without executing                                              |
 | `\gset [prefix]`                    | Execute and store results in psql variables                                            |
 | `\gexec`                            | Execute each cell of result as a SQL command                                           |
@@ -304,7 +304,7 @@ Variables in SQL: `:'varname'` (quoted string value, escapes embedded quotes), `
 \conninfo           Display connection info (includes SSL info)
 \encoding [ENC]     Set or show client encoding
 \password [USER]    Change password (does NOT appear in command history or server log)
-\q                   Quit psql (terminates only the current script, not all nested scripts)
+\q                   Quit psql. In a script file, only that script is terminated. In interactive mode, the entire program exits.
 \r                   Reset (clear) the query buffer
 \e                   Edit query buffer in external editor
 \ef [FUNCNAME]       Edit function definition
@@ -453,18 +453,14 @@ The `:'varname'` form (quoted) is always safer than `:varname` (unquoted), becau
 | Handle large result sets      | `\set FETCH_COUNT 1000` then run query                       |
 | Auto-savepoint on errors      | `\set ON_ERROR_ROLLBACK on` then use transactions            |
 
-- **`references/meta-commands-core.md`** — Core meta-commands: query buffer, argument parsing, connection management, query execution, scripting, and data import/export. The essential reference for daily psql usage.
-- **`references/meta-commands-inspection.md`** — All `\d` family commands for object inspection (tables, indexes, views, functions, etc.) and pattern matching rules. Consult this when exploring database schema.
-- **`references/meta-commands-formatting.md`** — Output formatting (`\pset` options), pipeline mode, and session management (`\e`, `\ef`, `\ev`, `\timing`, etc.).
-- **`references/cli-options-and-variables.md`** — All CLI flags, environment variables, and psql internal variables (AUTOCOMMIT, ON_ERROR_STOP, ECHO, etc.). Refer to this when configuring psql startup behavior or writing scripts that depend on variable state.
-- **`references/tips-workflows.md`** — Practical workflows, pattern matching examples, scripting patterns, and data import/export patterns. Useful when translating a task into the right sequence of psql commands.
-- **`references/tips-advanced.md`** — Performance tips, debugging/introspection, safety best practices, and common gotchas. Consult this for lock analysis, query plan inspection, and troubleshooting.
+- **`references/meta-commands-core.md`** — Core meta-commands: query buffer behavior, argument parsing rules, connection management, query execution, `\copy` syntax, and scripting commands (`\if`, `\i`, `\o`, backquote expansion). Read this when you need exact syntax or behavioral details for any backslash command.
+- **`references/meta-commands-inspection.md`** — Full `\d` command reference: all object inspection commands, modifiers (`S`, `+`, `x`), and pattern matching rules. Read this when exploring database schema or when the user needs to inspect tables, indexes, views, functions, privileges, etc.
+- **`references/meta-commands-formatting.md`** — Output formatting (`\pset` options and all format descriptions), pipeline mode, `\watch`, `\crosstabview`, and session management (`\e`, `\ef`, `\ev`, `\timing`, etc.). Read this when the user needs to control output format or use pipeline mode.
+- **`references/cli-options-and-variables.md`** — All CLI flags, environment variables, psql internal variables (AUTOCOMMIT, ON_ERROR_STOP, ECHO, FETCH_COUNT, etc.), prompt customization, `~/.psqlrc` configuration, and SQL interpolation syntax. Read this when configuring psql startup behavior, writing scripts that depend on variable state, or customizing prompts.
+- **`references/tips-workflows.md`** — Practical workflows (exploring a new database, understanding table structure), scripting patterns (safe scripts, conditional execution, `\gexec`), output control for automation, and data import/export patterns. Read this when the user asks how to accomplish a specific task with psql.
+- **`references/tips-advanced.md`** — Performance tips, debugging/introspection (`EXPLAIN`, lock analysis, `ECHO_HIDDEN`), safety best practices (ON_ERROR_STOP, transaction patterns, search_path safety), and common gotchas. Read this for lock analysis, query plan inspection, and troubleshooting.
 
 ## Important Notes
-
-Behavior
-
-### SQL Comment Handling
 
 psql handles two comment styles differently:
 

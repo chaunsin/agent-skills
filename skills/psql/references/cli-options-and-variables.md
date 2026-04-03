@@ -39,7 +39,7 @@ When `dbname` is the first non-option argument, it specifies the database. The s
 | `-f filename` / `--file=filename` | Execute commands from file, then exit. Use `-` for stdin (reads until EOF or `\q`; Readline not available). `-f` provides line-numbered error messages unlike shell redirection. |
 | `-F separator` / `--field-separator=separator` | Field separator for unaligned output (default: `|`) |
 | `-H` / `--html` | HTML output mode |
-| `-l` / `--list` | List available databases, then exit |
+| `-l` / `--list` | List available databases, then exit. Connects to `postgres` database unless a different database is specified via `-d` or a non-option argument. |
 | `-L filename` / `--log-file=filename` | Log all session output to file |
 | `-n` / `--no-readline` | Disable enhanced command-line editing and tab completion |
 | `-o filename` / `--output=filename` | Redirect all query output to file |
@@ -173,7 +173,7 @@ psql maintains internal variables that control behavior. Set with `\set`, unset 
 | `HIDE_TOAST_COMPRESSION` | If set, hide compression method in `\d+` output. |
 | `HISTCONTROL` | `none` (default), `ignorespace`, `ignoredups`, `ignoreboth`. Controls history saving. |
 | `HISTFILE` | Path to history file (default: `~/.psql_history`). Can include psql variable references, e.g. `\set HISTFILE ~/.psql_history-:DBNAME`. |
-| `HISTSIZE` | Maximum number of history entries (default: 500). |
+| `HISTSIZE` | Maximum number of history entries (default: 500). A negative value disables the limit. |
 | `HOST` | Current server host. Set automatically on connect. |
 | `IGNOREEOF` | If set, prevents Ctrl-D from exiting. Value is the number of EOFs to ignore before quitting. |
 | `LAST_ERROR_MESSAGE` | Error message from the last failed query. |
