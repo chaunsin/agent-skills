@@ -1,6 +1,6 @@
-Part of the psql tips reference. See also: tips-advanced.md
-
 # psql Tips — Workflows & Patterns
+
+Part of the psql tips reference. See also: tips-advanced.md
 
 Practical workflows and common patterns for getting the most out of psql.
 
@@ -21,7 +21,7 @@ All `\d` commands that accept a pattern parameter use the same matching rules. U
 ### Pattern Syntax
 
 | Pattern | Meaning | Example |
-|---------|---------|---------|
+| ------- | ------- | ------- |
 | `*` | Any sequence of characters | `\dt user*` matches `users`, `user_accounts` |
 | `?` | Any single character | `\dt user?` matches `users` but not `user_accounts` |
 | `.` | Separates schema from object | `\dt public.*` lists all tables in `public` |
@@ -75,7 +75,7 @@ All `\d` commands that accept a pattern parameter use the same matching rules. U
 
 ### Exploring a New Database
 
-```
+```sql
 -- Step 1: What databases exist?
 \l
 
@@ -109,7 +109,7 @@ SHOW all;
 
 ### Understanding Table Structure
 
-```
+```sql
 -- Basic structure: columns, types, nullable, defaults
 \d table_name
 
@@ -132,7 +132,7 @@ SHOW all;
 
 ### Checking Query Performance
 
-```
+```sql
 -- Enable timing
 \timing on
 
@@ -152,7 +152,7 @@ SELECT pg_size_pretty(pg_database_size(current_database()));
 
 ### Managing Transactions Manually
 
-```
+```sql
 \set AUTOCOMMIT off
 
 BEGIN;
@@ -193,11 +193,14 @@ COMMIT;
 SELECT current_setting('is_production', true) = 'true' AS is_prod \gset
 \if :is_prod
   \echo 'WARNING: Running on PRODUCTION'
+  -- \if only accepts boolean values. To check user input for a specific string,
+  -- use SQL to produce a boolean result:
   \prompt 'Type YES to continue: ' confirm
-  \if :confirm
+  SELECT :'confirm' = 'YES' AS confirmed \gset
+  \if :confirmed
     \echo 'Continuing...'
   \else
-    \echo 'Note: \if only checks boolean values, not string equality'
+    \echo 'Aborted.'
   \endif
 \endif
 
@@ -262,6 +265,7 @@ SELECT * FROM users LIMIT :batch_size;
 ```
 
 **Limitations**:
+
 - Backquote expansion is NOT performed inside single-quoted strings
 - Not performed in lines skipped by `\if`/`\else`/`\elif`
 - Not performed in `\copy` arguments (the entire line is taken literally)
@@ -326,6 +330,7 @@ psql -A -t -c "SELECT count(*) FROM users" mydb
 psql -A -t -c "SELECT json_agg(t) FROM (SELECT id, name FROM users) t" mydb
 
 # NUL-separated (for xargs -0)
+# WARNING: Ensure filenames from the database are trusted — untrusted input could delete arbitrary files
 psql -A -0 -t -c "SELECT filename FROM files" mydb | xargs -0 rm
 ```
 

@@ -9,7 +9,9 @@ description: >
   execution, table inspection, schema exploration, database administration from CLI, or psql
   configuration and customization. Even if the user doesn't explicitly say "psql" but is working
   with PostgreSQL from the command line, this skill is relevant.
-auth: chaunsin
+metadata: 
+  author: chaunsin
+  version: "0.1"
 ---
 # psql — PostgreSQL Interactive Terminal
 
@@ -54,7 +56,7 @@ psql -h host -p port -U user -d dbname
 # 2. Connection URI
 # WARNING: Password in URI is visible in shell history and process listings.
 #          Prefer ~/.pgpass for production use (see method 4 below).
-psql "postgresql://user:pass@host:port/dbname"
+psql "postgresql://user:YOUR_PASSWORD@host:port/dbname"
 
 # 3. Environment variables (no flags needed)
 export PGHOST=localhost
@@ -63,13 +65,13 @@ export PGDATABASE=mydb
 export PGUSER=postgres
 # WARNING: PGPASSWORD is visible in process listings (e.g. `ps aux`).
 #          Use ~/.pgpass in production instead.
-export PGPASSWORD=123456
+export PGPASSWORD=<secret>
 psql                       # picks up all params from env
 
 # 4. ~/.pgpass file (RECOMMENDED for passwords)
 #    Format: hostname:port:database:username:password
-echo "localhost:5432:mydb:postgres:123456" >> ~/.pgpass
-chmod 600 ~/.pgpass
+touch ~/.pgpass && chmod 600 ~/.pgpass
+echo "localhost:5432:mydb:postgres:YOUR_PASSWORD" >> ~/.pgpass
 psql -h localhost -U postgres -d mydb   # no password prompt
 
 # 5. Execute and exit
@@ -90,7 +92,7 @@ On connection failure: interactive mode keeps the previous connection; script mo
 
 Key flags: `-h` host, `-p` port, `-U` user, `-d` database, `-w` no password prompt, `-W` force password prompt, `-1` single transaction, `-f` execute file, `-c` execute command, `-t` tuples only, `-x` expanded, `-A` unaligned, `-E` echo hidden queries (`\d` internals), `-L` log file, `-X` skip `~/.psqlrc`.
 
-**Connection precedence**: CLI flags > environment variables > `pg_service.conf` > defaults. **Password precedence**: connection string/password flag > `~/.pgpass` > `PGPASSWORD` env. Use `~/.pgpass` instead of `PGPASSWORD` in production — `PGPASSWORD` is visible in process listings (`ps aux`).
+**Connection precedence**: CLI flags > environment variables > `pg_service.conf` > defaults. **Password precedence**: connection string/password flag > `PGPASSWORD` env > `~/.pgpass`. Use `~/.pgpass` instead of `PGPASSWORD` in production — `PGPASSWORD` is visible in process listings (`ps aux`).
 
 ### Object Inspection (\d family)
 
@@ -127,7 +129,7 @@ Key flags: `-h` host, `-p` port, `-U` user, `-d` database, `-w` no password prom
 | `\dA`           | Access methods                                           |
 | `\dAc` / `\dAf` / `\dAo` / `\dAp` | Operator classes, families, operators, support functions |
 | `\dC`           | Type casts                                               |
-| `\dconfig`      | Server configuration parameters (`\dconfig *` for all)  |
+| `\dconfig`      | Server configuration parameters (`\dconfig *` for all, PostgreSQL 16+)  |
 | `\dd`           | Object descriptions (comments)                           |
 | `\ddp`          | Default privileges                                       |
 | `\dL`           | Procedural languages                                     |
@@ -241,7 +243,7 @@ COPY (SELECT * FROM :table WHERE id > :min_id) TO STDOUT WITH (FORMAT csv, HEADE
 \pset numericlocale [on|off]  Toggle locale-specific number formatting
 \pset linestyle STYLE Set border style: ascii, old-ascii, unicode
 \pset pager_min_lines N  Minimum lines before pager activates
-\pset xheader_width MODE  Expanded header width: full, column, page, or N
+\pset xheader_width MODE  Expanded header width: full, column, page, or N (PostgreSQL 17+)
 \H                   Toggle HTML output (shortcut)
 \C [title]           Set table title (shortcut for \pset title)
 \f [string]          Set field separator (shortcut for \pset fieldsep)
@@ -321,8 +323,9 @@ Variables in SQL: `:'varname'` (quoted string value, escapes embedded quotes), `
 
 ```
 \startpipeline
-  \bind 42 \g
-  \bind 100 \g
+  SELECT $1 \bind 42 \sendpipeline
+  SELECT $1 \bind 100 \sendpipeline
+  \getresults
 \endpipeline
 ```
 
@@ -343,7 +346,7 @@ Pipeline mode sends multiple queries without waiting for each result, reducing r
 - `COPY` is not supported in pipeline mode
 - Meta-commands like `\g`, `\gx`, `\gdesc` are not allowed inside a pipeline
 - All queries use the extended query protocol
-- Use `\bind`, `\bind_named`, `\parse`, or `\close_prepared` within pipelines
+- Use `\bind`, `\bind_named`, `\parse`, `\close_prepared`, or `\sendpipeline` within pipelines
 - A `%P` prompt variable shows pipeline status (`on`, `off`, or `abort`)
 
 ### \watch Syntax
@@ -351,6 +354,8 @@ Pipeline mode sends multiple queries without waiting for each result, reducing r
 ```
 \watch [i[nterval]=SECONDS] [c[ount]=TIMES] [m[in_rows]=ROWS] [SECONDS]
 ```
+
+`count` and `min_rows` require PostgreSQL 17+.
 
 - `interval` — seconds between executions (default: 2, overridable via `WATCH_INTERVAL` variable)
 - `count` — stop after N executions
@@ -445,21 +450,6 @@ The `:'varname'` form (quoted) is always safer than `:varname` (unquoted), becau
 | Debug error details           | `\errverbose`                                                |
 | Handle large result sets      | `\set FETCH_COUNT 1000` then run query                       |
 | Auto-savepoint on errors      | `\set ON_ERROR_ROLLBACK on` then use transactions            |
-
-- **`references/meta-commands-core.md`** — Core meta-commands reference: query buffer, argument parsing, connection management, query execution (`\g`, `\gx`, `\gdesc`, \gset `, `\gexec `, `\crosstabview `, `\bind `, `\bind_named `, \parse`, \close_prepared), scripting, data import/export (`\copy`), large objects operations). Consult this when you need the full specification of any backslash command.
-  the `references/meta-commands-core.md` for context).
-- **`references/meta-commands-inspection.md`** — Object inspection commands (`\d` family) with pattern matching rules. Consult this when you need details about any `\d` command or related lookup.
-  the `references/meta-commands-inspection.md` for context.
-  When looking up table structure, index, or foreign keys information.
-  Also see `references/meta-commands-formatting.md`.
-- **`references/meta-commands-formatting.md`** — Output formatting (`\pset` options, format descriptions), pipeline mode commands, and session management (`\e`, `\ef`, `\ev`, `\cd`, `\r`, `\s`, `\timing`, `\errverbose`, `\restrict`/`\unrestrict`). See also: `references/meta-commands-core.md` for the other two parts of the series.
-- **`references/cli-options-and-variables.md`** — All CLI flags, environment variables, and psql internal variables (AUTOCOMMIT, ON_ERROR_STOP, ECHO, etc.). Refer to this when configuring psql startup behavior or writing scripts that depend on variable state.
-  Has prompt customization, examples. See also: `references/cli-options-and-variables.md`.- **`references/tips-workflows.md`** — Practical workflows, pattern matching examples. scripting patterns, and data import/export patterns. Useful when translating a task into the right sequence of psql commands.
-  Consult this when you need workflows examples or data migration guidance.
-  See also: `references/tips-advanced.md`.
-- **`references/tips-advanced.md`** — Performance tips, debugging/introspection, safety best practices. and common gotchas. Consult this for lock analysis, query plan inspection, and troubleshooting.
-
- See also: `references/tips-workflow.md` and `references/tips-advanced.md` for context.
 
 - **`references/meta-commands-core.md`** — Core meta-commands: query buffer, argument parsing, connection management, query execution, scripting, and data import/export. The essential reference for daily psql usage.
 - **`references/meta-commands-inspection.md`** — All `\d` family commands for object inspection (tables, indexes, views, functions, etc.) and pattern matching rules. Consult this when exploring database schema.

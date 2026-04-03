@@ -111,7 +111,7 @@ psql -1 -f migration.sql mydb
 psql -c "SELECT count(*) FROM users" mydb
 
 # Pass a variable from the command line
-psql -v table=users -c "SELECT count(*) FROM :table" mydb
+psql -v table=users -c 'SELECT count(*) FROM :"table"' mydb
 
 # Batch process with for-loop
 for f in /tmp/*.sql; do psql -1 -f "$f" mydb; done
@@ -353,8 +353,8 @@ Store passwords securely instead of using `PGPASSWORD`:
 ```
 # Format: hostname:port:database:username:password
 # Use * as wildcard
-localhost:5432:mydb:myuser:mypassword
-*:5432:*:admin:adminpass
+localhost:5432:mydb:myuser:YOUR_PASSWORD
+*:5432:*:admin:YOUR_PASSWORD
 ```
 
 Permissions must be 0600: `chmod 600 ~/.pgpass`
