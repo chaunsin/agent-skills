@@ -28,10 +28,10 @@ The `description` frontmatter field is the **activation trigger** — it lists k
 
 ## Current Skills
 
-| Skill | Topic |
-|-------|-------|
-| `postgresql-cli` | PostgreSQL interactive terminal (psql) — meta-commands, CLI options, formatting, import/export, scripting |
-| `rclone-cli` | Rclone cloud storage manager — sync, copy, mount, serve, bisync, crypt, filtering, 70+ providers |
+| Skill              | Topic                                                                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `postgresql-cli` | PostgreSQL interactive terminal ([psql](https://www.postgresql.org/docs/current/app-psql.html)) — meta-commands, CLI options, formatting, import/export, scripting |
+| `rclone-cli`     | [Rclone](https://rclone.org/) cloud storage manager — sync, copy, mount, serve, bisync, crypt, filtering, 70+ providers                                            |
 
 ## Git Conventions
 
