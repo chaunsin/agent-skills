@@ -15,11 +15,13 @@ Each skill lives in its own directory under `skills/<name>/` and consists of:
 
 ## Available Skills
 
-| Skill    | Description                                                                                                                                                |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [psql][] | PostgreSQL interactive terminal reference — meta-commands, CLI options, formatting, data import/export, scripting, and advanced workflows                  |
+| Skill                          | Description                                                                                                                                                                 |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [postgresql-cli][]             | PostgreSQL interactive terminal (psql) reference — meta-commands, CLI options, formatting, data import/export, scripting, and advanced workflows                            |
+| [rclone-cli][]                 | Rclone cloud storage manager reference — sync, copy, mount, serve, bisync, crypt, filtering, bandwidth control, and 70+ cloud provider configurations                      |
 
-[psql]: skills/psql/SKILL.md
+[postgresql-cli]: skills/postgresql-cli/SKILL.md
+[rclone-cli]: skills/rclone-cli/SKILL.md
 
 ## Installation
 
@@ -32,7 +34,7 @@ The [skills CLI](https://github.com/vercel-labs/skills) is a universal installer
 npx skills add chaunsin/agent
 
 # Install a specific skill
-npx skills add chaunsin/agent --skill psql
+npx skills add chaunsin/agent --skill postgresql-cli
 
 # List available skills before installing
 npx skills add chaunsin/agent --list
@@ -53,7 +55,7 @@ npx skills update
 npx skills list
 
 # Remove a specific skill
-npx skills remove psql
+npx skills remove postgresql-cli
 ```
 
 ### Manual
@@ -67,16 +69,20 @@ cp -r skills/<skill-name> ~/.claude/skills/
 
 Once installed, skills activate automatically based on their trigger keywords (defined in the `description` frontmatter field). No manual configuration is needed — when you ask a question related to a skill's domain, the agent will load the relevant reference.
 
-For example, with the psql skill installed, asking "how to list all tables in psql" or "psql \d commands" will trigger the skill.
+For example, with the postgresql-cli skill installed, asking "how to list all tables in psql" or "psql \d commands" will trigger the skill.
 
 ## Repository Structure
 
 ```text
 agent/
 ├── skills/                  # Skill directories
-│   └── psql/                # PostgreSQL interactive terminal
+│   ├── postgresql-cli/      # PostgreSQL interactive terminal (psql)
+│   │   ├── SKILL.md         # Skill entry point
+│   │   └── references/      # Detailed reference files
+│   └── rclone-cli/          # Rclone cloud storage manager
 │       ├── SKILL.md         # Skill entry point
-│       └── references/      # Detailed reference files
+│       ├── references/      # Detailed reference files
+│       └── scripts/         # Helper scripts
 ├── CLAUDE.md                # Claude Code workspace instructions
 ├── LICENSE                  # Apache 2.0
 └── README.md                # This file

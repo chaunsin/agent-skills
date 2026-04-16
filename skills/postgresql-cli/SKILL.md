@@ -1,5 +1,5 @@
 ---
-name: psql
+name: postgresql-cli
 description: >
   PostgreSQL interactive terminal (psql) reference and usage guide. Use this skill whenever the user
   mentions psql, PostgreSQL command-line client, backslash commands, meta-commands, \d commands,
