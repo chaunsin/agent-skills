@@ -2,14 +2,15 @@
 name: rclone-cli
 description: >
   Rclone command-line cloud storage manager reference and usage guide. Use this skill whenever the user
-  mentions rclone, cloud storage sync, cloud file transfer, S3 upload/download, Google Drive CLI,
-  Dropbox CLI, OneDrive CLI, Azure Blob CLI, cloud backup, remote mount, cloud-to-cloud copy,
-  rclone config, rclone sync, rclone copy, rclone mount, rclone serve, rclone bisync, rclone crypt,
-  or any task involving managing files on cloud storage from the terminal. Also applies when the user
-  asks about cloud storage providers (AWS S3, Google Cloud Storage, Backblaze B2, etc.), file filtering,
-  bandwidth control, checksum verification, encrypted remotes, or remote control API. Even if the user
-  doesn't explicitly say "rclone" but is working with cloud storage operations from the command line,
-  this skill is relevant.
+  mentions rclone, or performs any file operation involving cloud storage — uploading files to cloud,
+  downloading from cloud, syncing directories, mounting remote storage, or managing remote files.
+  Covers all major providers: AWS S3, Alibaba Cloud OSS (阿里云), Tencent COS (腾讯云), Huawei OBS,
+  Qiniu Kodo (七牛云), Minio, Google Drive, Dropbox, OneDrive, Azure Blob, Backblaze B2, and 70+ more.
+  Triggers on: cloud upload/download/sync/copy/move/delete, S3-compatible storage, cloud-to-cloud transfer,
+  remote mount, cloud backup, file filtering, bandwidth control, encrypted remotes, bisync, or any
+  terminal-based cloud file management. Use even if the user doesn't say "rclone" — any task that moves,
+  copies, uploads, downloads, or syncs files between local and cloud storage from the command line is
+  a match for this skill.
 metadata:
   author: chaunsin
   version: "0.1"
