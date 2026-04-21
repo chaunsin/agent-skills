@@ -211,6 +211,9 @@ redis-cli CONFIG SET maxmemory 100mb
 redis-cli CONFIG SET maxmemory-policy allkeys-lru
 redis-cli CONFIG SET timeout 300
 
+# Set multiple parameters in one call (Redis 7.0+)
+redis-cli CONFIG SET maxmemory 100mb maxmemory-policy allkeys-lru
+
 # Write current config to redis.conf
 redis-cli CONFIG REWRITE
 ```

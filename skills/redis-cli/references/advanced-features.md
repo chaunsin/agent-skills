@@ -311,7 +311,7 @@ redis-cli CLUSTER NODES                       # Full node topology (O(N))
 redis-cli CLUSTER SHARDS                      # Shard/node mapping (O(N), Redis 7.0+)
 
 # Slot management
-redis-cli CLUSTER KEYSLOT key                 # Hash slot for a key (O(N))
+redis-cli CLUSTER KEYSLOT key                 # Hash slot for a key (O(1))
 redis-cli CLUSTER ADDSLOTS slot [slot ...]    # Assign slots to node (O(N))
 redis-cli CLUSTER DELSLOTS slot [slot ...]    # Unbind slots (O(N))
 redis-cli CLUSTER SETSLOT slot IMPORTING|node-id|MIGRATING|STABLE  # Slot migration (O(1))

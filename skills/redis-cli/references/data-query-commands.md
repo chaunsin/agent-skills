@@ -339,6 +339,15 @@ GEOSEARCHSTORE dest key [...]          # Store search results             O(N)
 
 ## Key Operations
 
+### Debugging
+
+```
+DEBUG OBJECT key                       # Internal debug info (rl:refcount, lru, lru_seconds_idle, etc.)  O(1)
+DEBUG SEGFAULT                        # Crash server (debugging only, never in production)
+```
+
+`DEBUG OBJECT` returns internal metadata such as reference count, LRU idle time, encoding, and serialized length. Useful for diagnosing memory and eviction issues.
+
 ```
 EXISTS key [key ...]                   # Check existence (returns count)   O(N) for multi
 TYPE key                               # Data type (string|list|set|zset|hash|stream|none) O(1)

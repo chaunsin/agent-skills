@@ -1,6 +1,6 @@
 # Module Data Types
 
-Commands for Redis module data types: JSON, Vector Sets, and Probabilistic data structures (Bloom Filter, Cuckoo Filter, Top-K, Count-Min Sketch, T-Digest).
+Commands for Redis module data types: JSON, Vector Sets, Probabilistic data structures, TimeSeries, and Full-Text Search (RediSearch).
 
 ## Table of Contents
 
@@ -11,6 +11,8 @@ Commands for Redis module data types: JSON, Vector Sets, and Probabilistic data 
 - [Top-K](#top-k)
 - [Count-Min Sketch](#count-min-sketch)
 - [T-Digest](#t-digest)
+- [TimeSeries](#timeseries)
+- [Full-Text Search (RediSearch)](#full-text-search-redisearch)
 
 ## JSON (RedisJSON Module)
 
@@ -257,3 +259,171 @@ TDIGEST.RESET key                      # Reset to empty                  O(1)
 - `TDIGEST.QUANTILE 0.5` returns the approximate median
 - `TDIGEST.CDF` returns the fraction of observations <= the given value
 - After `TDIGEST.MERGE`, the destination sketch provides quantile estimates over the combined data
+
+## TimeSeries
+
+Store and query time series data (sensor readings, metrics, financial data). Timestamps are 64-bit integers in milliseconds. Supports aggregation, compaction rules, and label-based filtering.
+
+```
+# Create
+TS.CREATE key [RETENTION ms] [ENCODING COMPRESSED|UNCOMPRESSED] [CHUNK_SIZE bytes]
+            [DUPLICATE_POLICY BLOCK|FIRST|LAST|MIN|MAX|SUM]
+            [IGNORE maxTimeDiff maxValDiff]
+            [LABELS label value ...]                              # O(1)
+
+# Write
+TS.ADD key timestamp value [RETENTION ms] [ON_DUPLICATE policy]  # O(1), creates series if missing
+       [LABELS label value ...]
+       # timestamp: Unix ms, or * for server time
+TS.MADD key timestamp value [key timestamp value ...]             # O(N), batch add
+TS.INCRBY key value [TIMESTAMP ts] [RETENTION ms] [LABELS ...]   # O(1), counter/gauge
+TS.DECRBY key value [TIMESTAMP ts] [RETENTION ms] [LABELS ...]   # O(1), decrement
+
+# Single-series query
+TS.GET key [LATEST]                                               # Latest sample           O(1)
+TS.RANGE key from to [LATEST] [FILTER_BY_TS ts...]               # Range query             O(n/m+k)
+          [FILTER_BY_VALUE min max] [COUNT n]
+          [ALIGN align] [AGGREGATION fn bucketDuration]
+          [BUCKETTIMESTAMP bt] [EMPTY]
+TS.REVRANGE key from to [...]                                     # Same, descending order
+
+# Multi-series query (filter by labels)
+TS.MGET [LATEST] [WITHLABELS | SELECTED_LABELS lbl...]            # Latest from each series O(N)
+        FILTER label=value [...]
+TS.MRANGE from to [LATEST] [FILTER_BY_TS ts...]                  # Range across series     O(n/m+k)
+          [FILTER_BY_VALUE min max] [WITHLABELS | SELECTED_LABELS lbl...]
+          [COUNT n] [ALIGN align] [AGGREGATION fn bucketDuration]
+          FILTER label=value [...] [GROUPBY label REDUCE reducer]
+TS.MREVRANGE from to [...]                                        # Same, descending order
+
+# Index
+TS.QUERYINDEX filterExpr...                                       # List keys by labels     O(N)
+
+# Compaction rules
+TS.CREATERULE source dest AGGREGATION fn bucketDuration            # O(1), dest must exist
+TS.DELETERULE source dest                                         # O(1)
+
+# Management
+TS.ALTER key [RETENTION ms] [LABELS label value ...]              # O(1)
+TS.INFO key                                                       # Series metadata         O(1)
+TS.DEL key from to                                                # Delete range            O(N)
+```
+
+**Aggregation functions:** `AVG`, `SUM`, `MIN`, `MAX`, `RANGE`, `COUNT`, `FIRST`, `LAST`, `STD.P`, `STD.S`, `VAR.P`, `VAR.S`, `TWA` (time-weighted avg), `countNaN`, `countAll` (Redis 8.6+)
+
+**Timestamps:** Use `-` for earliest, `+` for latest in range queries.
+
+**Label filter syntax:** `label=value` (exact), `label!=(value1,value2)` (exclude), `label=(v1,v2)` (OR), `label=` (exists). Filters are conjunctive (AND).
+
+**DUPLICATE_POLICY** (on TS.CREATE): How to handle duplicate timestamps:
+- `BLOCK` — reject duplicate (default)
+- `FIRST` — keep first value
+- `LAST` — keep latest value
+- `MIN` / `MAX` / `SUM` — aggregate
+
+**Compaction:** `TS.CREATERULE` automatically computes aggregation as data arrives. Only data added *after* rule creation is processed. Destination key must already exist.
+
+## Full-Text Search (RediSearch)
+
+Full-text search, secondary indexing, and aggregation over Redis hashes and JSON documents.
+
+```
+# Index management
+FT.CREATE index [ON HASH|JSON] [PREFIX count prefix...]
+  [FILTER filter] [LANGUAGE lang] [TEMPORARY seconds]
+  [NOOFFSETS] [NOHL] [NOFIELDS] [NOFREQS]
+  [STOPWORDS count word...]
+  [SKIPINITIALSCAN]
+  SCHEMA field [AS alias] TEXT|TAG|NUMERIC|GEO|VECTOR|GEOSHAPE
+               [SORTABLE [UNF]] [NOINDEX] [...]                # O(K) create, O(N) scan
+
+FT.ALTER index [SKIPINITIALSCAN] SCHEMA ADD field ...           # Add fields             O(N)
+FT.INFO index                                                   # Index stats            O(1)
+FT.DROPINDEX index [DD]                                         # Drop index (DD=del docs) O(1)/O(N)
+
+# Aliases
+FT.ALIASADD alias index                                         # Create alias           O(1)
+FT.ALIASDEL alias                                               # Remove alias           O(1)
+FT.ALIASUPDATE alias index                                      # Point alias to index   O(1)
+
+# Search
+FT.SEARCH index query [NOCONTENT] [VERBATIM] [WITHSCORES]       # O(N) for single-word
+  [FILTER field min max ...] [GEOFILTER field lon lat radius unit]
+  [RETURN count field [AS name] ...]
+  [SUMMARIZE [FIELDS count field...] [FRAGS n] [LEN n] [SEPARATOR s]]
+  [HIGHLIGHT [FIELDS count field...] [TAGS open close]]
+  [SLOP slop] [INORDER] [LANGUAGE lang] [EXPANDER exp]
+  [SCORER scorer] [EXPLAINSCORE] [PAYLOAD payload]
+  [SORTBY field [ASC|DESC]] [LIMIT offset count]
+  [PARAMS nargs name value ...] [DIALECT dialect]
+  [TIMEOUT ms]
+
+# Aggregation pipeline
+FT.AGGREGATE index query [VERBATIM]                             # Non-deterministic
+  [LOAD count field ...] [TIMEOUT ms]
+  [GROUPBY nargs prop... [REDUCE fn nargs arg... [AS name]]...]
+  [SORTBY nargs prop [ASC|DESC]... [MAX n]]
+  [APPLY expression AS name]...
+  [LIMIT offset count] [FILTER filter]
+  [WITHCURSOR [COUNT n] [MAXIDLE ms]]
+  [PARAMS nargs name value ...] [DIALECT dialect]
+
+# Dictionary
+FT.DICTADD dict word [word ...]                                 # Add words              O(1)
+FT.DICTDEL dict word [word ...]                                 # Remove words           O(1)
+FT.DICTDUMP dict                                                # List words             O(N)
+
+# Synonyms
+FT.SYNUPDATE index groupid [SKIPINITIALSCAN] term [term ...]    # O(1)
+FT.SYNDUMP index                                                # O(N)
+
+# Suggestions
+FT.SUGADD key string score [INCR] [PAYLOAD payload]             # O(1)
+FT.SUGGET key prefix [FUZZY] [WITHSCORES] [WITHPAYLOADS]        # O(n)
+      [MAX num] [DIALECT dialect]
+FT.SUGDEL key string                                            # O(1)
+FT.SUGLEN key                                                   # O(1)
+
+# Other
+FT._LIST                                                        # List all indexes       O(N)
+FT.TAGVALS index field                                          # Distinct tag values    O(N)
+FT.PROFILE index query [LIMITED] [DIALECT dialect]              # Query profiling
+FT.EXPLAIN index query [DIALECT dialect]                        # Show query execution plan
+FT.SPELLCHECK index query [DISTANCE d] [DIALECT dialect]        # Spell check
+FT.CONFIG SET key value                                         # Set runtime config
+FT.CONFIG GET key                                               # Get runtime config
+
+# Cursors (for paginated FT.AGGREGATE)
+FT.CURSOR READ index cursor [COUNT count]                       # Read next page
+FT.CURSOR DEL index cursor                                      # Delete cursor
+```
+
+**FT.CREATE field types:**
+- `TEXT` — full-text searchable, supports stemming, phonetic matching
+- `TAG` — exact match labels (categories, IDs)
+- `NUMERIC` — range queries (prices, timestamps)
+- `GEO` — geographic coordinates (lon, lat)
+- `VECTOR` — vector similarity (KNN, cosine/L2/IP)
+- `GEOSHAPE` — geometric shapes (SPHERICAL|FLAT)
+
+**Query syntax (DIALECT 2+):**
+- `hello world` — union (OR) of terms
+- `"hello world"` — exact phrase
+- `@field:term` — field-specific search
+- `@price:[100 200]` — numeric range
+- `@location:[-122.41 37.77 5 km]` — geo radius
+- `*=>[KNN 10 @vec $blob]` — vector similarity (KNN)
+- `-term` — exclude term
+- `~term` — optional term
+- `*` — match all documents
+
+**FT.AGGREGATE pipeline stages:** `GROUPBY` + `REDUCE` → `SORTBY` → `APPLY` → `LIMIT` → `FILTER`. Available reducers: `COUNT`, `SUM`, `MIN`, `MAX`, `AVG`, `COUNT_DISTINCT`, `COUNT_DISTINCTISH`, `QUANTILE`, `STDDEV`, `FIRST_VALUE`, `RANDOM_SAMPLE`, `TOLIST`.
+
+**Behavioral notes:**
+- Use `DIALECT 2+` for vector queries and modern query syntax
+- `FT.SEARCH` returns `[total_count, doc_id, field, value, ...]` array
+- Without `SORTBY`, pagination (`LIMIT`) results are non-deterministic
+- `FT.CREATE` with `PREFIX` auto-indexes matching keys; new keys are indexed on write
+- In cluster mode, index and documents must be on the same shard (use hash tags)
+- `SORTABLE` fields increase memory usage but enable fast sorting
+- Maximum 1024 fields per index, 128 TEXT fields
