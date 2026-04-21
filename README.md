@@ -19,6 +19,7 @@ Each skill lives in its own directory under `skills/<name>/` and consists of:
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [postgresql-cli][postgresql-cli] | [PostgreSQL](https://www.postgresql.org/docs/current/app-psql.html) interactive terminal (psql) reference — meta-commands, CLI options, formatting, data import/export, scripting, and advanced workflows |
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) cloud storage manager reference — sync, copy, mount, serve, bisync, crypt, filtering, bandwidth control, and 70+ cloud provider configurations                              |
+| [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface reference — data querying, key scanning, server monitoring, latency analysis, scripting, and advanced modes                 |
 
 ## Installation
 
@@ -76,10 +77,13 @@ agent-skills/
 │   ├── postgresql-cli/      # PostgreSQL interactive terminal (psql)
 │   │   ├── SKILL.md         # Skill entry point
 │   │   └── references/      # Detailed reference files
-│   └── rclone-cli/          # Rclone cloud storage manager
+│   ├── rclone-cli/          # Rclone cloud storage manager
+│   │   ├── SKILL.md         # Skill entry point
+│   │   ├── references/      # Detailed reference files
+│   │   └── scripts/         # Helper scripts
+│   └── redis-cli/           # Redis command-line interface
 │       ├── SKILL.md         # Skill entry point
-│       ├── references/      # Detailed reference files
-│       └── scripts/         # Helper scripts
+│       └── references/      # Detailed reference files
 ├── CLAUDE.md                # Claude Code workspace instructions
 ├── LICENSE                  # Apache 2.0
 └── README.md                # This file
@@ -91,3 +95,4 @@ agent-skills/
 
 [postgresql-cli]: skills/postgresql-cli/SKILL.md
 [rclone-cli]: skills/rclone-cli/SKILL.md
+[redis-cli]: skills/redis-cli/SKILL.md
