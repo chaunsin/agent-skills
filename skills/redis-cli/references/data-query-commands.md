@@ -14,6 +14,7 @@ Complete command reference for querying and manipulating data in Redis, organize
 - [HyperLogLog](#hyperloglog)
 - [Geospatial](#geospatial)
 - [JSON (RedisJSON Module)](#json-redisjson-module)
+- [Vector Sets (Redis 8.0+)](#vector-sets-redis-80)
 - [Key Operations](#key-operations)
 - [Database Operations](#database-operations)
 - [Transactions](#transactions)
@@ -258,7 +259,10 @@ Streams are append-only log data structures with consumer groups for message pro
 
 ```
 # Write
-XADD key [NOMKSTREAM] [MAXLEN|MINID [=|~] threshold] *|ID field value [field value ...]
+XADD key [NOMKSTREAM] [MAXLEN|MINID [=|~] threshold [LIMIT count]] *|ID field value [field value ...]
+                                        # Add entry                            O(1)
+XADD key [KEEPREF|DELREF|ACKED] ...     # Reference control (Redis 8.2+)
+XADD key [IDMPAUTO pid | IDMP pid iid] ...  # Idempotent add (Redis 8.6+)
 
 # Read
 XRANGE key start end [COUNT count]                 # Read by ID range     O(N)
@@ -353,6 +357,66 @@ JSON.ARRINSERT key path index value [...]  # Insert into array
 JSON.NUMINCRBY key path value          # Increment number
 ```
 
+## Vector Sets (Redis 8.0+)
+
+Vector sets store elements with associated vectors and support approximate nearest neighbor (ANN) similarity search using an HNSW (Hierarchical Navigable Small World) graph. Ideal for semantic search, recommendation systems, and AI embedding storage.
+
+```
+# Write
+VADD key [REDUCE dim] (FP32 | VALUES num) vector element [CAS] [NOQUANT|Q8|BIN] [EF ef] [SETATTR json] [M numlinks]
+                                        # Add element with vector              O(log(N))
+
+VREM key element                       # Remove element                        O(log(N))
+
+# Similarity search
+VSIM key (ELE | FP32 | VALUES num) (vector | element) [WITHSCORES] [WITHATTRIBS] [COUNT n]
+        [EPSILON delta] [EF ef] [FILTER expr] [FILTER-EF max] [TRUTH] [NOTHREAD]
+                                        # Find similar elements                 O(log(N))
+
+# Read
+VEMB key element [RAW]                 # Get vector for element                O(1)
+VRANGE key start end [count]           # Lexicographic range iteration         O(log(K)+M)
+VCARD key                              # Element count                         O(1)
+VDIM key                               # Vector dimensionality                 O(1)
+VISMEMBER key element                  # Check element exists                  O(1)
+VLINKS key element [WITHSCORES]        # HNSW graph neighbors                  O(1)
+VRANDMEMBER key [count]                # Random element(s)                     O(N)
+VSETATTR key element "{ json }"        # Set JSON attributes                   O(1)
+VGETATTR key element                   # Get JSON attributes                   O(1)
+VINFO key                              # Vector set metadata                   O(1)
+```
+
+**VADD vector input:**
+- `VALUES 3 0.1 1.2 0.5 my-element` — string floats, platform-independent
+- `FP32 <blob> my-element` — binary 32-bit float blob, must be little-endian
+
+**VADD quantization options** (mutually exclusive, set on first VADD):
+- `NOQUANT` — no quantization, full precision (most memory)
+- `Q8` — signed 8-bit int quantization (default, good balance)
+- `BIN` — binary quantization (fastest, least memory, lower recall)
+
+**VSIM input modes:**
+- `ELE element` — search by existing element in the set
+- `VALUES num v1 v2 ...` — search by float vector
+- `FP32 <blob>` — search by binary vector
+
+**VSIM key options:**
+- `WITHSCORES` — include similarity score (1 = identical, 0 = opposite)
+- `WITHATTRIBS` — include JSON attributes for each result
+- `COUNT n` — limit results (default 10)
+- `EPSILON delta` — only return elements with distance < delta (similarity > 1-delta)
+- `EF ef` — search exploration factor (higher = better recall, slower)
+- `FILTER expr` — filter by attribute expression (e.g., `".year > 2020"`)
+- `TRUTH` — exact linear scan (O(N)), for benchmarking recall quality
+
+**VRANGE iteration** (Redis 8.4+):
+Stateless lexicographic iteration. `start`/`end` use `[` inclusive, `(` exclusive, `-` min, `+` max:
+```
+VRANGE mykey - + 10        # First 10 elements
+VRANGE mykey (last + 10    # Next 10 after "last"
+VRANGE mykey - + -1        # All elements (caution: may be slow)
+```
+
 ## Key Operations
 
 ```
@@ -386,6 +450,7 @@ OBJECT IDLETIME key                    # Seconds since last access        O(1)
 OBJECT FREQ key                        # Access frequency (LFU)           O(1)
 MEMORY USAGE key [SAMPLES count]       # Memory in bytes                  O(N)
 SORT key [BY pattern] [LIMIT offset count] [GET pattern [GET pattern ...]] [ASC|DESC] [ALPHA] [STORE dest]
+SORT_RO key [BY pattern] [LIMIT offset count] [GET pattern [GET pattern ...]] [ASC|DESC] [ALPHA]  # Read-only sort (Redis 7.0+)
 ```
 
 **Expiry options explained:**

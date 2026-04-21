@@ -32,7 +32,7 @@ The `description` frontmatter field is the **activation trigger** — it lists k
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `postgresql-cli` | PostgreSQL interactive terminal ([psql](https://www.postgresql.org/docs/current/app-psql.html)) — meta-commands, CLI options, formatting, import/export, scripting |
 | `rclone-cli`     | [Rclone](https://rclone.org/) cloud storage manager — sync, copy, mount, serve, bisync, crypt, filtering, 70+ providers                                            |
-| `redis-cli`      | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface — data querying, key scanning, server monitoring, latency analysis, scripting   |
+| `redis-cli`      | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface — data querying, key scanning, server monitoring, latency analysis, vector search, ACL management, cluster management, scripting |
 
 ## Git Conventions
 

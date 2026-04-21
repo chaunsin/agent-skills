@@ -7,6 +7,7 @@
 - [Pipe Mode](#pipe-mode)
 - [CSV and JSON Output](#csv-and-json-output)
 - [Getting Input from Other Programs](#getting-input-from-other-programs)
+- [Cluster Management](#cluster-management)
 
 ## Lua Scripting
 
@@ -254,3 +255,84 @@ while true; do
   echo "SET timestamp:$(date +%s) $(date -Iseconds)"
 done | redis-cli --pipe
 ```
+
+## Cluster Management
+
+redis-cli provides built-in cluster management via `--cluster` subcommands, plus direct cluster commands for lower-level control.
+
+### redis-cli Cluster Operations
+
+```bash
+# Create a new cluster (interactive prompts for replication)
+redis-cli --cluster create host1:port1 host2:port2 host3:port3 --cluster-replicas 1
+
+# Check cluster state
+redis-cli --cluster check host1:port1
+
+# Show cluster info
+redis-cli --cluster info host1:port1
+
+# Reshard (move slots between nodes)
+redis-cli --cluster reshard host1:port1 --cluster-from <node-id> --cluster-to <node-id> --cluster-slots <n>
+
+# Rebalance slots across all nodes
+redis-cli --cluster rebalance host1:port1
+
+# Add a node to the cluster
+redis-cli --cluster add-node new-host:new-port existing-host:existing-port
+# As replica:
+redis-cli --cluster add-node new-host:new-port existing-host:existing-port --cluster-slave --cluster-master-id <id>
+
+# Remove a node
+redis-cli --cluster del-node host:port <node-id>
+
+# Fix cluster issues (missing slots, etc.)
+redis-cli --cluster fix host:port
+
+# Execute command on all cluster nodes
+redis-cli --cluster call host:port <command>
+
+# List all --cluster subcommands
+redis-cli --cluster help
+```
+
+Use `-c` flag to enable cluster mode in redis-cli (automatically follows `-ASK` and `-MOVED` redirections):
+
+```bash
+redis-cli -c -h cluster-node -p 6379
+```
+
+### Cluster Commands (Direct)
+
+```bash
+# Cluster state and topology
+redis-cli CLUSTER INFO                        # Cluster state overview (O(1))
+redis-cli CLUSTER NODES                       # Full node topology (O(N))
+redis-cli CLUSTER SHARDS                      # Shard/node mapping (O(N), Redis 7.0+)
+
+# Slot management
+redis-cli CLUSTER KEYSLOT key                 # Hash slot for a key (O(N))
+redis-cli CLUSTER ADDSLOTS slot [slot ...]    # Assign slots to node (O(N))
+redis-cli CLUSTER DELSLOTS slot [slot ...]    # Unbind slots (O(N))
+redis-cli CLUSTER SETSLOT slot IMPORTING|node-id|MIGRATING|STABLE  # Slot migration (O(1))
+
+# Node management
+redis-cli CLUSTER MEET ip port [bus-port]     # Join cluster (O(1))
+redis-cli CLUSTER FORGET node-id              # Remove node (O(1))
+redis-cli CLUSTER REPLICATE node-id           # Become replica of node (O(1))
+redis-cli CLUSTER RESET [HARD|SOFT]           # Reset cluster state (O(N))
+
+# Failover
+redis-cli CLUSTER FAILOVER [FORCE|TAKEOVER]   # Manual failover (O(1))
+redis-cli CLUSTER SAVECONFIG                  # Save config to disk (O(1))
+
+# Node identification
+redis-cli CLUSTER MYID                        # Current node ID (O(1))
+redis-cli CLUSTER MYSHARDID                   # Current shard ID (O(1))
+```
+
+**Behavioral notes:**
+- Redis Cluster has 16384 hash slots distributed across master nodes
+- `CLUSTER SLOTS` is deprecated since Redis 7.0 — use `CLUSTER SHARDS` instead
+- Use `redis-cli -c` for transparent cluster redirections in interactive mode
+- `CLUSTER FORGET` auto-propagates via gossip in Redis 7.2+

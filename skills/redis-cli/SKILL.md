@@ -5,10 +5,13 @@ description: >
   the user mentions redis-cli, Redis CLI, Redis command line, Redis terminal client, or any
   task involving querying, inspecting, or managing data in Redis from the command line.
   Triggers on: Redis data querying (GET, SET, HGET, HGETALL, ZRANGE, LRANGE, SMEMBERS),
-  key inspection (SCAN, KEYS, TYPE, TTL, EXISTS), server monitoring (INFO, MONITOR, --stat),
-  key space analysis (--bigkeys, --memkeys, --keystats), latency debugging (--latency),
-  Pub/Sub operations, Lua script execution, database administration from CLI, Redis cluster
-  operations, mass data import/export, RDB backup, CSV/JSON output, or any Redis operation
+  vector similarity search (VADD, VSIM, VEMB, VRANGE), key inspection (SCAN, KEYS, TYPE, TTL,
+  EXISTS), server monitoring (INFO, MONITOR, --stat), key space analysis (--bigkeys, --memkeys,
+  --keystats), latency debugging (--latency), Pub/Sub operations, Lua script execution,
+  database administration from CLI, Redis cluster operations (--cluster, CLUSTER NODES,
+  CLUSTER INFO), ACL user management (ACL SETUSER, ACL LIST), client management (CLIENT LIST,
+  CLIENT KILL), configuration (CONFIG GET, CONFIG SET), replication acknowledgment (WAIT,
+  WAITAOF), mass data import/export, RDB backup, CSV/JSON output, or any Redis operation
   performed from a terminal. Use even if the user doesn't explicitly say "redis-cli" — any
   task that reads, writes, scans, or manages data in Redis from the command line is a match
   for this skill.
@@ -258,15 +261,49 @@ redis-cli -r -1 -i 1 INFO | grep rss_human    # infinite, every 1s
 5 INCR mycounter    # runs 5 times
 ```
 
+### Server Administration
+
+```bash
+# ACL management
+redis-cli ACL LIST                                    # List all users
+redis-cli ACL SETUSER admin on >pwd ~* +@all          # Create admin user
+redis-cli ACL SETUSER readonly on >pwd ~* +@read      # Create read-only user
+redis-cli ACL DELUSER username                        # Delete user
+redis-cli ACL DRYRUN username GET key                 # Test user permission
+redis-cli ACL GENPASS                                 # Generate random password
+
+# Client management
+redis-cli CLIENT LIST                                 # List all connections
+redis-cli CLIENT KILL ADDR ip:port                    # Disconnect client
+redis-cli CLIENT PAUSE 5000 WRITE                     # Pause writes for 5s
+redis-cli CLIENT SETNAME my-app                       # Name current connection
+
+# Configuration
+redis-cli CONFIG GET maxmemory                        # Read config
+redis-cli CONFIG SET maxmemory 100mb                  # Set config at runtime
+redis-cli CONFIG REWRITE                              # Persist to redis.conf
+redis-cli CONFIG RESETSTAT                            # Reset INFO counters
+
+# Replication acknowledgment
+redis-cli WAIT 2 5000                                 # Wait for 2 replicas (5s timeout)
+redis-cli WAITAOF 1 1 5000                            # Wait for AOF fsync (Redis 7.2+)
+
+# Cluster management
+redis-cli --cluster check host:port                   # Check cluster health
+redis-cli --cluster reshard host:port                 # Move slots between nodes
+redis-cli -c -h cluster-node PING                     # Cluster-aware connection
+```
+
 ## Detailed Reference Files
 
 | File | Content | When to read |
 |------|---------|-------------|
 | `references/connection-and-options.md` | Full connection options, CLI flags, SSL/TLS, environment variables, interactive mode features (completion, history, preferences), RESP protocol versions | Configuring connections, setting up TLS, customizing CLI behavior |
-| `references/data-query-commands.md` | Complete command reference for all data types: Strings, Hashes, Lists, Sets, Sorted Sets, Streams, with syntax, complexity, and behavioral notes | Looking up specific command syntax, understanding command options and return values |
+| `references/data-query-commands.md` | Complete command reference for all data types: Strings, Hashes, Lists, Sets, Sorted Sets, Streams, Bitmaps, HyperLogLog, Geospatial, JSON, Vector Sets, with syntax, complexity, and behavioral notes | Looking up specific command syntax, understanding command options and return values |
 | `references/key-management.md` | SCAN family details (SCAN/SSCAN/HSCAN/ZSCAN), big keys analysis (--bigkeys, --memkeys, --keystats), key expiration (EXPIRE, TTL, PERSIST), key space patterns, mass insertion | Scanning databases, analyzing key distribution, managing key lifecycles |
 | `references/inspection-and-monitoring.md` | INFO sections, MONITOR, --stat mode, latency tools (--latency, --latency-history, --latency-dist, --intrinsic-latency), RDB backup, replica mode, LRU simulation | Monitoring Redis instances, debugging performance, creating backups |
-| `references/advanced-features.md` | Lua scripting (--eval, --ldb), Pub/Sub mode, pipe mode, CSV/JSON output, string quoting and escaping, get input from stdin, remote RDB transfer | Running scripts, subscribing to channels, bulk data operations |
+| `references/advanced-features.md` | Lua scripting (--eval, --ldb), Pub/Sub mode, pipe mode, CSV/JSON output, string quoting and escaping, get input from stdin, remote RDB transfer, Cluster management (--cluster subcommands, cluster commands) | Running scripts, subscribing to channels, bulk data operations, managing Redis Cluster |
+| `references/server-administration.md` | ACL management (ACL SETUSER/DELUSER/LIST/CAT/GENPASS), client management (CLIENT LIST/KILL/PAUSE/TRACKING), configuration (CONFIG GET/SET/REWRITE), replication acknowledgment (WAIT/WAITAOF) | Managing users and permissions, controlling client connections, runtime configuration, ensuring write durability |
 
 ## Common Workflows
 
