@@ -1,25 +1,13 @@
 ---
 name: redis-cli
 description: >
-  Redis command-line interface (redis-cli) reference and usage guide. Use this skill whenever
-  the user mentions redis-cli, Redis CLI, Redis command line, Redis terminal client, or any
-  task involving querying, inspecting, or managing data in Redis from the command line.
-  Triggers on: Redis data querying (GET, SET, HGET, HGETALL, ZRANGE, LRANGE, SMEMBERS),
-  vector similarity search (VADD, VSIM, VEMB, VRANGE), key inspection (SCAN, KEYS, TYPE, TTL,
-  EXISTS), server monitoring (INFO, MONITOR, --stat), key space analysis (--bigkeys, --memkeys,
-  --keystats), latency debugging (--latency), Pub/Sub operations, Lua script execution,
-  database administration from CLI, Redis cluster operations (--cluster, CLUSTER NODES,
-  CLUSTER INFO), ACL user management (ACL SETUSER, ACL LIST), client management (CLIENT LIST,
-  CLIENT KILL), configuration (CONFIG GET, CONFIG SET), replication acknowledgment (WAIT,
-  WAITAOF), persistence (SAVE, BGSAVE, BGREWRITEAOF), replication setup (REPLICAOF),
-  slow query analysis (SLOWLOG), mass data import/export, RDB backup, CSV/JSON output,
-  probabilistic data structures (Bloom filter BF.*, Cuckoo filter CF.*, Top-K, Count-Min Sketch,
-  T-Digest), time series data (TS.CREATE, TS.ADD, TS.RANGE, TS.MRANGE, TS.GET, TS.MADD,
-  TS.INCRBY, TS.QUERYINDEX, time series aggregation and compaction), full-text search and
-  secondary indexing (FT.CREATE, FT.SEARCH, FT.AGGREGATE, FT.INFO, RediSearch, text search,
-  vector search with KNN), or any Redis operation performed from a terminal. Use even if the
-  user doesn't explicitly say "redis-cli" — any task that reads, writes, scans, or manages
-  data in Redis from the command line is a match for this skill.
+  Redis command-line interface (redis-cli) reference and usage guide. Use this skill whenever the user
+  mentions redis-cli, Redis CLI, or any task involving querying, inspecting, debugging, or managing
+  Redis from the command line. Triggers on key/value reads and writes, SCAN or keyspace inspection,
+  INFO or MONITOR troubleshooting, latency and bigkeys analysis, Pub/Sub, Lua scripts, ACL and client
+  management, cluster operations, import/export, and Redis module workflows such as RediSearch,
+  RedisJSON, Bloom/CF/TopK, vector search, and time series commands. Use even if the user does not
+  explicitly say "redis-cli" when the work is clearly terminal-based Redis operations.
 metadata:
   author: chaunsin
   version: "0.1"

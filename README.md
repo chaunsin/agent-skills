@@ -18,8 +18,8 @@ Each skill lives in its own directory under `skills/<name>/` and consists of:
 | Skill                            | Description                                                                                                                                                                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [postgresql-cli][postgresql-cli] | [PostgreSQL](https://www.postgresql.org/docs/current/app-psql.html) interactive terminal (psql) reference — meta-commands, CLI options, formatting, data import/export, scripting, and advanced workflows |
-| [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) cloud storage manager reference — sync, copy, mount, serve, bisync, crypt, filtering, bandwidth control, and 70+ cloud provider configurations                              |
-| [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface reference — data querying, key scanning, server monitoring, latency analysis, vector search, ACL management, cluster management, scripting, and advanced modes |
+| [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) cloud storage manager reference — terminal-based upload, download, sync, copy, move, mount, backup, filtering, encryption, bisync, and multi-provider remote management      |
+| [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface reference — Redis querying, keyspace inspection, monitoring, latency analysis, ACL and cluster management, scripting, and module workflows |
 
 ## Installation
 
@@ -32,10 +32,10 @@ The [skills CLI](https://github.com/vercel-labs/skills) is a universal installer
 npx skills add chaunsin/agent-skills
 
 # Install a specific skill
-npx skills add chaunsin/agent-skills--skill postgresql-cli
+npx skills add chaunsin/agent-skills --skill postgresql-cli
 
 # List available skills before installing
-npx skills add chaunsin/agent-skills--list
+npx skills add chaunsin/agent-skills --list
 
 # Install globally (available across all projects)
 npx skills add chaunsin/agent-skills -g
