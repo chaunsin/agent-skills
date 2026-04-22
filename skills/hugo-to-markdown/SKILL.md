@@ -9,7 +9,7 @@ description: >
   Hugo configuration and custom templates define the true rules.
 metadata:
   author: chaunsin
-  version: "0.1"
+  version: "0.2"
 ---
 
 # Hugo To Markdown
@@ -72,10 +72,12 @@ Read `references/conversion-workflow.md` before changing files. Then:
 
 1. Resolve the real content root from `hugo.toml`, `config.*`, and module mounts.
 2. Read archetypes to understand expected front matter shape.
-3. Read custom shortcode templates in `layouts/_shortcodes/`.
-4. Read render hooks in `layouts/_markup/`.
-5. Follow `include`-style shortcodes into referenced content files when the docs site composes content from shared fragments.
-6. Convert one file or one coherent section at a time.
+3. Read site data sources in `data/` when shortcodes or partials pull structured content from them.
+4. Read custom shortcode templates in `layouts/_shortcodes/` or `layouts/shortcodes/`.
+5. Read render hooks in `layouts/_markup/`.
+6. Check whether the repo already defines Markdown- or JSON-facing export templates and partials; if it does, use those as evidence for how the site itself downgrades Hugo constructs.
+7. Follow `include`-style shortcodes into referenced content files when the docs site composes content from shared fragments.
+8. Convert one file or one coherent section at a time.
 
 ### 3. Preserve semantics during conversion
 
@@ -83,10 +85,11 @@ Use these rules by default:
 
 - Keep YAML front matter unless the user explicitly asks for front-matter-free Markdown.
 - Preserve core fields such as `title`, `description`, `date`, `draft`, `aliases`, `slug`, `url`, `weight`, and nested `params` when they still carry meaning.
+- Normalize reserved Hugo front matter keys to their canonical names when the repo mixes casing, for example `Title` to `title`, `Description` to `description`, and `LinkTitle` to `linkTitle`.
 - Convert Hugo internal links to normal Markdown links with resolved destinations.
 - Replace Hugo shortcodes with plain Markdown, HTML, or explicit notes only after reading the local shortcode implementation.
 - Materialize dynamically generated lists and tables when the shortcode renders content from sections or data files.
-- Leave literal Hugo examples inside fenced code blocks unchanged when the document is documenting Hugo syntax rather than invoking it.
+- Leave literal Hugo examples unchanged when the document is documenting Hugo syntax rather than invoking it. This applies both inside fenced code blocks and to escaped forms such as `{{</* foo */>}}` or `{{%/* foo */%}}` that appear in prose, tables, or notation examples.
 
 ### 4. Apply Hugo-specific body rules carefully
 
@@ -97,6 +100,7 @@ The Hugo docs repository under `testdata/hugo/docs/` has several important local
 - `quick-reference`, `render-list-of-pages-in-section`, and `render-table-of-pages-in-section` generate navigation content from sections; replace them with materialized Markdown lists or tables.
 - `glossary-term`, `glossary`, `get-page-desc`, `module-mounts-note`, `new-in`, and `deprecated-in` expand to prose or badges; convert them into explicit Markdown text or callouts.
 - `code-toggle` may read config snippets and data-backed examples; preserve the underlying code sample, not the UI toggle.
+- if the repo has data-backed or example-extraction shortcodes such as `features-table`, `optional-features-table`, `clients-example`, or `jupyter-example`, inspect the referenced `data/` files, local example sources, and Markdown-export partials before deciding whether to materialize or downgrade.
 - glossary links can use the special Markdown destination `(g)`; resolve these to stable glossary links instead of leaving the placeholder.
 - `img` and `imgproc` are presentation helpers around page, global, or remote resources; preserve the underlying image reference and caption semantics.
 - `eturl` emits links to embedded template sources; convert to a normal Markdown link if the destination is known, otherwise preserve as a textual note.
@@ -120,6 +124,17 @@ If the validator reports active Hugo syntax outside code fences, either:
 
 Do not silently ship unresolved `{{< ... >}}`, `{{% ... %}}`, or Go template expressions.
 
+### 6. Downgrade explicitly when full materialization is not safe
+
+If a shortcode depends on build-time data, generated examples, or external source files that you cannot resolve deterministically from the local repo snapshot, replace it with an explicit Markdown note.
+
+Use a short, boring format such as:
+
+- `> Conversion note: <what the shortcode normally renders>.`
+- followed by any safe subset you were able to preserve, such as inline Redis CLI text, a resolved image URL, or a known section list
+
+Do not leave empty links, broken table cells, or stripped content with no explanation.
+
 ## Repo-Specific Notes For `testdata/hugo/docs`
 
 Use these facts when the local Hugo docs fixture is the input:
@@ -129,7 +144,7 @@ Use these facts when the local Hugo docs fixture is the input:
 - `markup.goldmark.parser.attribute.block = true`, so block attribute syntax may appear after fenced blocks and other block elements.
 - The repo uses custom render hooks for blockquotes, code blocks, links, passthrough, and tables.
 - The repo uses many shared `_common` fragments referenced through `% include %`, so reading a page file alone is not enough to understand the rendered content.
-- The repo contains many escaped shortcode examples such as `{{</* foo */>}}`; these are documentation samples and must remain literal when they are inside code examples.
+- The repo contains many escaped shortcode examples such as `{{</* foo */>}}` and `{{%/* foo */%}}`; these are documentation samples and must remain literal when they appear inside code examples, notation tables, or tutorial prose.
 
 ## Safety Rules
 

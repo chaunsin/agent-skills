@@ -14,6 +14,24 @@ Use Hugo's rule, documented in the official shortcode pages:
 
 For conversion, do not preserve this live syntax in the final standard Markdown unless the document is explicitly teaching Hugo syntax.
 
+## First Classify The Shortcode
+
+Before rewriting any shortcode, classify it into one of these groups:
+
+1. Literal documentation example
+2. Static wrapper around local content or assets
+3. Content-graph expander
+4. Data-backed renderer
+5. External example extractor
+
+This classification should drive the conversion strategy:
+
+- Literal documentation example: preserve literally
+- Static wrapper: replace with normal Markdown or HTML
+- Content-graph expander: recursively resolve local pages or sections
+- Data-backed renderer: read the referenced `data/*` or local metadata source
+- External example extractor: inspect the referenced local example files, or downgrade with an explicit note if deterministic reconstruction is not possible
+
 ## Docs-Site Custom Shortcodes
 
 The Hugo docs fixture defines these custom shortcodes in `layouts/_shortcodes/`:
@@ -40,6 +58,8 @@ The Hugo docs fixture defines these custom shortcodes in `layouts/_shortcodes/`:
 - `syntax-highlighting-styles`
 
 Read the local template file before deciding the replacement.
+
+If the repository already contains Markdown-export partials or AI-facing templates, use them as evidence for how the site itself flattens these constructs. Do not copy them blindly without understanding which shortcodes they intentionally expand and which they intentionally leave alone.
 
 ## High-Impact Local Rules
 
@@ -89,6 +109,11 @@ Local implications from the docs fixture:
 - `fm=true` means the emitted example includes front matter semantics
 - `config=` and `dataKey=` style usage can pull data-backed snippets, so read local data files before flattening the shortcode
 
+If the required data source is not locally obvious or requires remarshal logic that you cannot reproduce safely, replace the shortcode with:
+
+- the visible inline sample when one exists, or
+- a short note explaining that the repository builds multiple code variants from data at render time
+
 ### `glossary-term` and glossary links
 
 The docs fixture uses glossary shortcuts in two forms:
@@ -97,6 +122,51 @@ The docs fixture uses glossary shortcuts in two forms:
 - Markdown links whose destination is exactly `(g)`
 
 Both should become explicit Markdown links or explicit glossary labels in the output.
+
+### Content-graph expanders in non-Hugo fixtures
+
+Other Hugo repos may use shortcodes with similar graph-expansion behavior under different names, for example:
+
+- `embed-md`
+- `table-children`
+- `command-group`
+
+Treat these as repository-specific features. Read the local shortcode or partial implementation before deciding whether it expands sibling pages, child sections, or data files.
+
+### Data-backed and example-extraction shortcodes in non-Hugo fixtures
+
+In docs repos such as Redis or Rclone fixtures, expect shortcodes like:
+
+- `features-table`
+- `optional-features-table`
+- `clients-example`
+- `jupyter-example`
+
+These often depend on:
+
+- `data/*`
+- generated metadata files
+- local example source trees
+- Markdown-export partials
+
+Materialize them only when the local dependency chain is clear and deterministic. Otherwise, downgrade to a `Conversion note:` block and keep any safe inline content.
+
+## Literal Example Guardrails
+
+Preserve escaped shortcode examples even outside fenced code blocks when they are part of:
+
+- notation comparison tables
+- syntax tutorials
+- inline prose demonstrating how to call a shortcode
+
+Examples:
+
+```text
+{{%/* foo */%}}
+{{</* foo */>}}
+```
+
+Do not strip these with a generic shortcode remover.
 
 ## Render Hooks
 
@@ -118,3 +188,13 @@ Important implications:
 - passthrough hooks can make math delimiters meaningful content rather than raw noise
 
 For link-heavy pages, read the local `render-link.html` and the official render-hook docs before rewriting links.
+
+## Safe Fallback Format
+
+If a shortcode remains unresolved after inspection, replace it with a short explicit note in the final Markdown, for example:
+
+```text
+> Conversion note: `clients-example` normally renders multi-language tabs. This sample keeps only the inline Redis CLI content.
+```
+
+This is preferable to shipping live Hugo syntax or silently dropping meaning.

@@ -17,6 +17,7 @@ When converting:
 - keep remote links as normal external links
 - preserve fragments when they still point to stable headings
 - avoid copying unresolved Hugo link functions into the output
+- if a generated table or list uses front matter fields for labels, resolve those fields case-insensitively before emitting the final Markdown
 
 ## Assets
 
@@ -45,12 +46,25 @@ Review hits for:
 - Hugo-specific link helpers left in prose
 - leaked local absolute paths
 - executable HTML or script residue that should have been downgraded
+- empty Markdown links or table cells caused by front matter key mismatches
+- missing downgrade notes where content was stripped but not materialized
 
 ## Residue Triage
 
 If the validator reports a construct:
 
 1. Check whether it is inside a fenced code block.
-2. If it is a literal example, keep it.
-3. If it is active Hugo syntax, resolve or rewrite it.
-4. If it cannot be resolved safely, replace it with explicit Markdown text explaining the original behavior.
+2. Check whether it is an escaped literal example such as `{{</* foo */>}}` or `{{%/* foo */%}}` in prose or a notation table.
+3. If it is a literal example, keep it.
+4. If it is active Hugo syntax, resolve or rewrite it.
+5. If it cannot be resolved safely, replace it with explicit Markdown text explaining the original behavior.
+
+## Downgrade Review
+
+After conversion, manually inspect each explanatory note you introduced:
+
+- verify that the original shortcode syntax is gone
+- verify that the note still tells the reader what was omitted
+- verify that any safe subset, such as inline code, resolved links, or image URLs, was preserved
+
+The goal is standard Markdown with explicit loss reporting, not silent truncation.

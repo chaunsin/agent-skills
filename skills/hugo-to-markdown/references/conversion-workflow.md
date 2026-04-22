@@ -10,9 +10,11 @@ Read these in order:
 
 1. `hugo.toml`, `hugo.yaml`, `hugo.yml`, `hugo.json`, or `config/*`
 2. `archetypes/*`
-3. `layouts/_shortcodes/*`
-4. `layouts/_markup/*`
-5. `content/*`
+3. `data/*`
+4. `layouts/_shortcodes/*` or `layouts/shortcodes/*`
+5. `layouts/_markup/*`
+6. Markdown- or JSON-facing export templates and partials such as `layouts/_default/*.md`, `layouts/_default/*.json`, or `layouts/partials/markdown-*.html`
+7. `content/*`
 
 For the Hugo docs fixture in this repository, also read:
 
@@ -38,13 +40,17 @@ Inspect the output for:
 - render hook names
 - frequently used shortcodes
 - front matter keys
+- whether shortcode usage clusters around content graph expansion, section listings, data-backed tables, or external example extraction
 
 Use the inventory to batch files by complexity:
 
 - plain Markdown only
 - front matter only
+- literal Hugo documentation examples
 - built-in shortcode usage
+- content-graph shortcodes such as `include`, `embed-md`, `glossary-term`, and `table-children`
 - custom shortcode usage
+- data-backed shortcode usage
 - render-hook-sensitive links and assets
 
 ## Step 3: Convert one slice at a time
@@ -53,9 +59,11 @@ Preferred order:
 
 1. plain pages
 2. pages with only front matter normalization
-3. pages using shared includes
-4. pages using custom shortcodes
-5. pages whose content is partially generated from sections or data files
+3. pages that mostly document Hugo syntax and contain literal shortcode examples
+4. pages using shared includes
+5. pages using custom shortcodes
+6. pages whose content is partially generated from sections or data files
+7. pages whose content depends on generated code examples or external local sources
 
 This keeps regressions local and makes validation easier.
 
@@ -73,6 +81,15 @@ Examples from the Hugo docs site:
 
 Do not keep these as live Hugo shortcodes in the final standard Markdown.
 
+When evaluating a shortcode, classify it first:
+
+1. Static wrapper around inner Markdown or a simple asset
+2. Content graph expansion into other pages or sections
+3. Data-backed expansion using `data/*`
+4. Generated example extraction from files outside the current page
+
+This classification determines whether you can materialize the output directly, need recursive page resolution, need data-file reads, or must degrade to an explicit note.
+
 ## Step 5: Keep literal Hugo examples literal
 
 The docs site frequently documents Hugo syntax itself. Distinguish:
@@ -88,7 +105,26 @@ Common literal-example pattern:
 
 When the construct is inside a fenced code block or otherwise clearly documentation, preserve it literally.
 
-## Step 6: Validate aggressively
+Also preserve escaped forms such as these when they appear in prose or tables:
+
+```text
+{{%/* foo */%}}
+{{</* foo */>}}
+```
+
+Do not strip them just because they match a loose shortcode regex.
+
+## Step 6: Normalize front matter before building derived content
+
+Before using front matter to populate generated tables or lists:
+
+- map reserved keys case-insensitively, for example `Title` to `title`
+- treat `linkTitle` and `LinkTitle` as the same logical field
+- preserve unknown custom keys as-is
+
+This prevents empty links and missing descriptions when a repo mixes Hugo key casing conventions.
+
+## Step 7: Validate aggressively
 
 After each batch:
 
@@ -98,3 +134,5 @@ python3 skills/hugo-to-markdown/scripts/check_standard_markdown.py \
 ```
 
 Treat validator hits as unresolved work unless they are deliberate examples inside code fences.
+
+If you intentionally downgraded a shortcode to an explanatory note, that note should remain in the output and the original shortcode should not.
