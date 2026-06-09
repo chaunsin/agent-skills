@@ -19,6 +19,7 @@ Each skill lives in its own directory under `skills/<name>/` and consists of:
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [hugo-to-markdown][hugo-to-markdown] | Hugo documentation and content conversion reference — inspect local Hugo config, shortcodes, render hooks, front matter, and mounted content roots to produce safe standard Markdown exports          |
 | [postgresql-cli][postgresql-cli] | [PostgreSQL](https://www.postgresql.org/docs/current/app-psql.html) interactive terminal (psql) reference — meta-commands, CLI options, formatting, data import/export, scripting, and advanced workflows |
+| [pre-release-review][pre-release-review] | Production pre-release code review and deploy-readiness audit — inspect PRs or git ranges for missing migrations, configs, caches, queues, assets, secrets, service order, and rollout risks |
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) cloud storage manager reference — terminal-based upload, download, sync, copy, move, mount, backup, filtering, encryption, bisync, and multi-provider remote management      |
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface reference — Redis querying, keyspace inspection, monitoring, latency analysis, ACL and cluster management, scripting, and module workflows |
 
@@ -78,6 +79,9 @@ agent-skills/
 │   ├── postgresql-cli/      # PostgreSQL interactive terminal (psql)
 │   │   ├── SKILL.md         # Skill entry point
 │   │   └── references/      # Detailed reference files
+│   ├── pre-release-review/  # Production release readiness review
+│   │   ├── SKILL.md         # Skill entry point
+│   │   └── references/      # Checklist and report template
 │   ├── hugo-to-markdown/    # Hugo docs and content to standard Markdown
 │   │   ├── SKILL.md         # Skill entry point
 │   │   ├── references/      # Hugo conversion rules
@@ -100,5 +104,6 @@ agent-skills/
 
 [postgresql-cli]: skills/postgresql-cli/SKILL.md
 [hugo-to-markdown]: skills/hugo-to-markdown/SKILL.md
+[pre-release-review]: skills/pre-release-review/SKILL.md
 [rclone-cli]: skills/rclone-cli/SKILL.md
 [redis-cli]: skills/redis-cli/SKILL.md
