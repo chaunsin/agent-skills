@@ -41,6 +41,20 @@ release steps begin.
 - Read `references/report-template.md` before writing the final report so priorities, owner
   inference, secret redaction, and output shape stay consistent.
 
+## Project guidance discovery
+
+Before interpreting the release diff, look for project-local guidance files such as `AGENTS.md` and
+`CLAUDE.md` in the repository root and relevant service directories. Read them when present so the
+review respects the user's project-specific conventions, service boundaries, release rules,
+validation expectations, ownership hints, and known operational constraints.
+
+- Treat project guidance as context for how to interpret risks, not as permission to perform
+  mutating release actions.
+- If project guidance conflicts with this skill's non-negotiable safety rules, the read-only,
+  no-secret-disclosure rules in this skill win.
+- If a relevant guidance file cannot be read, note the limitation in "Unable To Verify" only when it
+  affects the release review.
+
 ## Scope selection
 
 Determine the review range before judging risk. State the chosen range in the report.
@@ -73,6 +87,7 @@ git status --short
 git rev-parse --show-toplevel
 git rev-parse --abbrev-ref HEAD
 git rev-parse HEAD
+rg --files -g 'AGENTS.md' -g 'CLAUDE.md'
 git tag --merged HEAD --sort=-creatordate
 git tag --points-at HEAD
 git for-each-ref --sort=-creatordate --format="%(refname:short) %(objectname:short)" refs/tags

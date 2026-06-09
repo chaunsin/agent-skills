@@ -33,6 +33,7 @@ The `description` frontmatter field is the **activation trigger** — it lists k
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `hugo-to-markdown` | Hugo documentation and content conversion — inspect local Hugo config, shortcodes, render hooks, front matter, and mounted content roots to produce safe standard Markdown exports |
 | `postgresql-cli` | PostgreSQL interactive terminal ([psql](https://www.postgresql.org/docs/current/app-psql.html)) — meta-commands, CLI options, formatting, import/export, scripting |
+| `pre-release-review` | Production pre-release code review and deploy-readiness audit — inspect PRs or git ranges for missing migrations, configs, caches, queues, assets, secrets, service order, and rollout risks |
 | `rclone-cli`     | [Rclone](https://rclone.org/) cloud storage manager — sync, copy, mount, serve, bisync, crypt, filtering, 70+ providers                                            |
 | `redis-cli`      | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface — data querying, key scanning, server monitoring, latency analysis, vector search, ACL management, cluster management, scripting |
 
