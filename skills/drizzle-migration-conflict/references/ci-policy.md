@@ -53,6 +53,12 @@ If the repository does not vendor this skill, copy the helper script into the re
 equivalent read-only check from the CI tooling repository. In multi-config repositories, pass the
 same config and matching migration directory to both Drizzle Kit and the helper script.
 
+The helper script exits with: `0` when all checked directories are clean, `1` when any error or
+warning issue is found, and `2` when no migration directory was discovered at all. A CI step that
+runs the script should fail the job on a non-zero exit, but treat exit `2` as "nothing to check"
+only if the repo is expected to have no Drizzle migrations; otherwise exit `2` usually means
+detection missed the migration directory and the config should be passed explicitly.
+
 ## What merge queue does and does not solve
 
 Merge queue can serialize the final merge order and test a temporary merge result. It does not

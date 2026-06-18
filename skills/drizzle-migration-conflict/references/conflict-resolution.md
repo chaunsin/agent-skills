@@ -13,6 +13,10 @@ stale generated migration artifacts with a migration generated from the merged s
    - Legacy: `meta/_journal.json`, `meta/*_snapshot.json`, root SQL files.
    - Folder-based: migration directories with `migration.sql` and `snapshot.json`.
    - Mixed or unknown: stop and ask for the intended migration output path.
+   - Transitioning (legacy artifacts plus a partial move to folder-based): do not repair until the
+     user confirms the target structure. Treat the legacy artifacts and the folder-based artifacts
+     as one logical history only after the intended end state is clear; otherwise a repair could
+     discard the wrong side.
 3. Are schema source files already resolved?
    - If not, resolve those first or tell the user the migration cannot be regenerated safely yet.
 4. Is the user asking for diagnosis or repair?
@@ -30,8 +34,11 @@ python3 <skill-dir>/scripts/check_drizzle_migrations.py --root .
 ```
 
 If `rg` is not available, use `find` and `grep` equivalents. Resolve `<skill-dir>` to the installed
-skill directory. If the target repository vendors this skill, the path may be
-`skills/drizzle-migration-conflict`.
+skill directory before running the helper. Check in order and use the first match that contains
+`scripts/check_drizzle_migrations.py`: the target repo's vendored
+`skills/drizzle-migration-conflict`, then `~/.claude/skills/drizzle-migration-conflict`, then any
+user-reported install location. If none resolve, fall back to the `git`/`rg` inspection commands
+above and tell the user the helper was not found.
 
 ## Legacy structure repair
 
@@ -112,11 +119,25 @@ python3 <skill-dir>/scripts/check_drizzle_migrations.py --root . --migrations-di
 
 Run `drizzle-kit check` only after inspecting `drizzle.config.*`, package scripts, and relevant env
 variables. Confirm that any database URL or credentials point to a non-production or disposable
-target before executing it.
+target before executing it. Work through this checklist before running the command:
+
+1. Read `drizzle.config.*` and note any `url`, `dbCredentials`, `credentials`, or connection fields.
+   Determine whether they are literal, read from `process.env`, or loaded via `dotenv`.
+2. Identify which env vars feed those fields (common names: `DATABASE_URL`, `DB_URL`,
+   `POSTGRES_URL`, `DRIZZLE_DATABASE_URL`). Check `.env`, `.env.local`, and the package script's
+   environment for their values without echoing secrets.
+3. If a value points at a production host (named `prod`/`production`, a managed cluster endpoint,
+   or a host the user identifies as live), stop and ask for a disposable target. Do not run the check.
+4. If `drizzle-kit check` needs a real connection for the configured dialect, prefer overriding the
+   URL inline with a disposable/local database, or use a config that disables connection (some
+   dialects allow a schema-only check). If neither is possible, fall back to the database-free
+   helper script and report that `drizzle-kit check` could not be run safely.
+5. Only after the target is confirmed non-production, run the project-approved check command.
 
 ```bash
 # Project script names vary; inspect package.json first.
-pnpm exec drizzle-kit check --config <drizzle-config>
+# Override with a disposable DATABASE_URL only if the config requires a connection.
+DATABASE_URL=postgres://localhost/disposable pnpm exec drizzle-kit check --config <drizzle-config>
 ```
 
 ### Project tests

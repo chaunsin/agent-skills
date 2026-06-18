@@ -48,19 +48,11 @@ answer depends on the current migration directory shape, the Drizzle Kit version
 
 ## Source references
 
-Keep these links available for recursive verification and future updates:
-
-- Drizzle discussion 1104: https://github.com/drizzle-team/drizzle-orm/discussions/1104
-- Drizzle discussion 2832: https://github.com/drizzle-team/drizzle-orm/discussions/2832
-- Drizzle discussion 5005: https://github.com/drizzle-team/drizzle-orm/discussions/5005
-- Drizzle discussion 5581: https://github.com/drizzle-team/drizzle-orm/discussions/5581
-- Drizzle Kit generate docs: https://orm.drizzle.team/docs/drizzle-kit-generate
-- Drizzle Kit check docs: https://orm.drizzle.team/docs/drizzle-kit-check
-- Drizzle migrations docs: https://orm.drizzle.team/docs/migrations
-- Legacy undo gist: https://gist.github.com/anthonyjoeseph/102c0e3ea8496fe111029a8b8a95cc3a
-- Legacy repair gist: https://gist.github.com/anthonyjoeseph/6b99beb34d494acd1dfc83a192ed9388
-- Earlier repair script variant: https://gist.github.com/gburtini/7e34842c567dd80ee834de74e7b79edd
-- GitHub merge queue docs: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue
+The full list of official docs, Drizzle GitHub discussions, community scripts, and merge-queue
+references lives in `references/sources.md` with trust levels and caveats. Read that file whenever
+the answer depends on current Drizzle behavior. Re-verify the official docs and the most relevant
+discussion when the project's `drizzle-kit` major version changes, since migration internals
+(snapshot format, journal shape, `drizzle-kit check` semantics) have shifted between releases.
 
 ## Mode selection
 
@@ -72,6 +64,17 @@ Classify the task first:
 4. **Explain** - The user wants a conceptual answer or a team playbook.
 
 When the mode is not explicit, choose Diagnose.
+
+Each mode unlocks a specific set of actions. Do not cross these boundaries without an explicit upgrade:
+
+- **Diagnose** - read-only only. Run `git status`, `git ls-files -u`, the helper script, and file
+  inspection. Do not run `drizzle-kit check`, typechecks, tests, or any write command. Report
+  findings and the proposed repair path, but do not execute it.
+- **Repair** - adds file writes and `drizzle-kit generate`/`check` execution, each gated by the
+  Safety rules and explicit confirmation of the exact files and side (`ours`/`theirs`) to change.
+- **CI hardening** - adds proposing or editing CI/workflow files. Do not run migration commands
+  against the user's database to validate the workflow; validate the workflow syntax and logic only.
+- **Explain** - conceptual only. No commands against the repo beyond optional read-only inspection.
 
 ## Repository discovery
 
@@ -99,9 +102,17 @@ If this skill's helper script is available, run it in read-only mode:
 python3 <skill-dir>/scripts/check_drizzle_migrations.py --root .
 ```
 
-Resolve `<skill-dir>` to the installed skill directory. If the target repository vendors this skill,
-that path may be `skills/drizzle-migration-conflict`. Use `--config <file>` and
-`--migrations-dir <dir>` when the project has multiple Drizzle configs or outputs.
+Resolve `<skill-dir>` to the installed skill directory before running. Check these locations in order
+and use the first that contains `scripts/check_drizzle_migrations.py`:
+
+1. The target repository's vendored copy: `<repo-root>/skills/drizzle-migration-conflict`.
+2. The Claude Code skills directory: `~/.claude/skills/drizzle-migration-conflict`.
+3. Any other install location reported by the user's environment.
+
+If none of these resolve, fall back to the manual `git`/`rg` inspection commands above and tell the
+user the helper script was not found. Use `--config <file>` and `--migrations-dir <dir>` when the
+project has multiple Drizzle configs or outputs. The script never connects to a database and never
+writes files; it only reads migration directories and reports structural issues.
 
 ## Migration structure decision
 
@@ -134,7 +145,11 @@ Identify the structure before proposing a fix:
 - Separate confirmed conflicts from assumptions and missing evidence.
 - Give a safe default path first, then optional automation or CI hardening.
 - For destructive steps, label them as "requires confirmation" and explain what will be lost.
-- Use the conclusion values from `references/report-template.md` for diagnostic reports.
+- Never echo secrets. When inspecting `drizzle.config.*`, `.env`, or environment variables, do not
+  include database URLs, passwords, tokens, or connection strings in the report. Reference them as
+  `<redacted>` or describe only whether they point at a production-like target.
+- Use the conclusion values from `references/report-template.md` for diagnostic reports:
+  `NO_CONFLICT_FOUND`, `SAFE_TO_REGENERATE`, `NEEDS_USER_CONFIRMATION`, or `BLOCKED_BY_AMBIGUITY`.
 
 ## Test prompts
 
@@ -145,3 +160,6 @@ Use these prompts to validate the skill behavior:
 - "Design CI so our team stops merging broken Drizzle migrations."
 - "Can I solve this production Drizzle migration conflict with `drizzle-kit push`?"
 - "Use the links in the skill to re-check the current official Drizzle migration conflict guidance."
+- "We're halfway through moving from the legacy flat layout to folder-based migrations. How do we handle a conflict during the transition?"
+- "Our `drizzle.config.ts` sets `out` from `process.env.MIGRATIONS_DIR`, and the helper says no out directory was found. What now?"
+- "`drizzle-kit check` keeps failing on a migration we know commutes. Can we just always pass `--ignore-conflicts`?"

@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Read-only structural checks for Drizzle migration outputs."""
+"""Read-only structural checks for Drizzle migration outputs.
+
+This helper never connects to a database, never imports project code, and never writes
+files. It only reads migration directories, parses `_journal.json`/snapshot JSON, and
+reports structural inconsistencies.
+
+Exit codes:
+    0  All checked migration directories are clean (no errors or warnings).
+    1  At least one error or warning issue was found.
+    2  No migration directories were discovered (pass --config or --migrations-dir).
+"""
 
 from __future__ import annotations
 
@@ -72,7 +82,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--allow-outside-root",
         action="store_true",
-        help="Allow explicit config/out or migration directories outside --root.",
+        help=(
+            "Allow explicit config/out or migration directories outside --root. "
+            "Only use when the user has named the exact path and you have confirmed it "
+            "contains no sensitive content; the script will still skip known vendored "
+            "directories but cannot guarantee what lives under an arbitrary root."
+        ),
     )
     parser.add_argument("--json", action="store_true", help="Print JSON output.")
     return parser.parse_args()
@@ -179,7 +194,17 @@ def parse_config_out_dirs(root: Path, configs: list[Path], allow_outside_root: b
             continue
         matches = list(re.finditer(r'''\bout\s*:\s*['"`]([^'"`]+)['"`]''', text))
         if not matches:
-            issues.append(make_issue("warning", "config-out-not-found", config, root, "No literal out directory found."))
+            issues.append(
+                make_issue(
+                    "warning",
+                    "config-out-not-found",
+                    config,
+                    root,
+                    "No literal out directory found in config. If `out` is computed "
+                    "(e.g. process.env.MIGRATIONS_DIR), pass --migrations-dir explicitly "
+                    "so the migration directory is not missed.",
+                )
+            )
             continue
         for match in matches:
             path = normalize_dir(config.parent, match.group(1))
@@ -358,10 +383,87 @@ def check_duplicate_values(
             )
 
 
-def validate_snapshot_json(path: Path, root: Path, issues: list[Issue]) -> None:
-    _, error = read_json(path)
+def check_idx_gap(entries: list[dict[str, Any]], journal: Path, root: Path, issues: list[Issue]) -> None:
+    """Warn when journal `idx` values are not contiguous starting from 0."""
+    idx_values: list[int] = []
+    for entry in entries:
+        idx = entry.get("idx")
+        if isinstance(idx, bool):
+            continue
+        if isinstance(idx, int):
+            idx_values.append(idx)
+        elif isinstance(idx, str) and idx.isdigit():
+            idx_values.append(int(idx))
+    if not idx_values:
+        return
+    sorted_idx = sorted(set(idx_values))
+    expected = list(range(sorted_idx[0], sorted_idx[0] + len(sorted_idx)))
+    if sorted_idx != expected or sorted_idx[0] != 0:
+        missing = sorted(set(expected) - set(sorted_idx))
+        gap_text = f"missing indices {missing}" if missing else f"starts at {sorted_idx[0]} instead of 0"
+        add_issue(
+            issues,
+            "warning",
+            "idx-gap",
+            journal,
+            root,
+            f"_journal.json idx sequence is not contiguous from 0 ({gap_text}). This can indicate a "
+            "conflict or a manually deleted migration.",
+        )
+
+
+def check_snapshot_chain(
+    snapshots: list[tuple[Path, Any]], directory: Path, root: Path, issues: list[Issue]
+) -> None:
+    """Validate that snapshot `prevId` links form a chain over known snapshot `id` values."""
+    id_to_paths: dict[str, list[Path]] = {}
+    parsed: list[tuple[Path, str | None, str | None]] = []
+    for path, data in snapshots:
+        if not isinstance(data, dict):
+            continue
+        snap_id = data.get("id")
+        prev_id = data.get("prevId")
+        if isinstance(snap_id, str) and snap_id:
+            id_to_paths.setdefault(snap_id, []).append(path)
+            parsed.append((path, snap_id, prev_id if isinstance(prev_id, str) else None))
+        else:
+            parsed.append((path, None, prev_id if isinstance(prev_id, str) else None))
+
+    for snap_id, paths in id_to_paths.items():
+        if len(paths) > 1:
+            joined = ", ".join(relative(path, root) for path in paths)
+            add_issue(
+                issues,
+                "error",
+                "duplicate-snapshot-id",
+                paths[0],
+                root,
+                f"Multiple snapshot files share id {snap_id!r}: {joined}. Drizzle uses snapshot ids to "
+                "chain migrations; duplicates usually mean a generated file was copied instead of regenerated.",
+            )
+
+    known_ids = set(id_to_paths.keys())
+    for path, snap_id, prev_id in parsed:
+        if prev_id is None or prev_id == "":
+            continue
+        if prev_id not in known_ids:
+            add_issue(
+                issues,
+                "warning",
+                "broken-snapshot-chain",
+                path,
+                root,
+                f"Snapshot prevId {prev_id!r} does not match any snapshot id in {relative(directory, root)}. "
+                "The migration chain may be broken by a conflict or a partial repair.",
+            )
+
+
+def validate_snapshot_json(path: Path, root: Path, issues: list[Issue]) -> Any | None:
+    data, error = read_json(path)
     if error:
         add_issue(issues, "error", "invalid-snapshot-json", path, root, f"Cannot parse snapshot JSON: {error}")
+        return None
+    return data
 
 
 def check_legacy(directory: Path, root: Path) -> DirectoryReport:
@@ -387,6 +489,7 @@ def check_legacy(directory: Path, root: Path) -> DirectoryReport:
         entries = [entry for entry in data["entries"] if isinstance(entry, dict)]
     check_duplicate_values(entries, "idx", journal, root, issues)
     check_duplicate_values(entries, "tag", journal, root, issues)
+    check_idx_gap(entries, journal, root, issues)
 
     expected_sql: set[str] = set()
     expected_snapshots: set[str] = set()
@@ -445,8 +548,10 @@ def check_legacy(directory: Path, root: Path) -> DirectoryReport:
             )
 
     snapshot_files = sorted((directory / "meta").glob("*_snapshot.json"))
+    parsed_snapshots: list[tuple[Path, Any | None]] = []
     for path in snapshot_files:
-        validate_snapshot_json(path, root, issues)
+        data = validate_snapshot_json(path, root, issues)
+        parsed_snapshots.append((path, data))
         if path.name not in expected_snapshots:
             add_issue(
                 issues,
@@ -456,6 +561,8 @@ def check_legacy(directory: Path, root: Path) -> DirectoryReport:
                 root,
                 "Snapshot file is not referenced by _journal.json.",
             )
+
+    check_snapshot_chain(parsed_snapshots, directory, root, issues)
 
     scan_conflict_markers(directory, root, issues)
     return DirectoryReport(str(relative(directory, root)), "legacy", issues)

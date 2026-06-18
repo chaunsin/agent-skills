@@ -64,3 +64,6 @@ Mode: <diagnose | repair | ci-hardening | explain>
 - If the project has multiple Drizzle configs, report each output independently.
 - If no conflict is found but the worktree is dirty, state that uncommitted files were not repaired.
 - Do not include clean checklist categories that are irrelevant to the user's conflict.
+- Redact secrets. Never include database URLs, passwords, tokens, or connection strings in the
+  report. When a config or env value matters, describe only whether it points at a production-like
+  target and write the value as `<redacted>`.
