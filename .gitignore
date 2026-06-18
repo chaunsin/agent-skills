@@ -14,3 +14,7 @@
 
 # custom
 /testdata/*
+
+# python bytecode cache
+__pycache__/
+*.py[cod]
