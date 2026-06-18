@@ -17,6 +17,7 @@ Each skill lives in its own directory under `skills/<name>/` and consists of:
 
 | Skill                            | Description                                                                                                                                                                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [drizzle-migration-conflict][drizzle-migration-conflict] | Drizzle Kit migration conflict diagnosis and team workflow guidance - inspect `_journal.json`, snapshots, migration folders, merge conflicts, `drizzle-kit check`, and CI prevention |
 | [hugo-to-markdown][hugo-to-markdown] | Hugo documentation and content conversion reference — inspect local Hugo config, shortcodes, render hooks, front matter, and mounted content roots to produce safe standard Markdown exports          |
 | [postgresql-cli][postgresql-cli] | [PostgreSQL](https://www.postgresql.org/docs/current/app-psql.html) interactive terminal (psql) reference — meta-commands, CLI options, formatting, data import/export, scripting, and advanced workflows |
 | [pre-release-review][pre-release-review] | Production pre-release code review and deploy-readiness audit — inspect PRs or git ranges for missing migrations, configs, caches, queues, assets, secrets, service order, and rollout risks |
@@ -76,6 +77,10 @@ For example, with the postgresql-cli skill installed, asking "how to list all ta
 ```text
 agent-skills/
 ├── skills/                  # Skill directories
+│   ├── drizzle-migration-conflict/ # Drizzle Kit migration conflict repair and prevention
+│   │   ├── SKILL.md         # Skill entry point
+│   │   ├── references/      # Conflict playbook, CI policy, report template, sources
+│   │   └── scripts/         # Read-only migration structure checker
 │   ├── postgresql-cli/      # PostgreSQL interactive terminal (psql)
 │   │   ├── SKILL.md         # Skill entry point
 │   │   └── references/      # Detailed reference files
@@ -103,6 +108,7 @@ agent-skills/
 [Apache License 2.0](LICENSE)
 
 [postgresql-cli]: skills/postgresql-cli/SKILL.md
+[drizzle-migration-conflict]: skills/drizzle-migration-conflict/SKILL.md
 [hugo-to-markdown]: skills/hugo-to-markdown/SKILL.md
 [pre-release-review]: skills/pre-release-review/SKILL.md
 [rclone-cli]: skills/rclone-cli/SKILL.md

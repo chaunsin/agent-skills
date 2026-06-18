@@ -31,6 +31,7 @@ The `description` frontmatter field is the **activation trigger** — it lists k
 
 | Skill              | Topic                                                                                                                                                            |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `drizzle-migration-conflict` | Drizzle Kit migration conflict diagnosis and team workflow guidance - inspect `_journal.json`, snapshots, migration folders, merge conflicts, `drizzle-kit check`, and CI prevention |
 | `hugo-to-markdown` | Hugo documentation and content conversion — inspect local Hugo config, shortcodes, render hooks, front matter, and mounted content roots to produce safe standard Markdown exports |
 | `postgresql-cli` | PostgreSQL interactive terminal ([psql](https://www.postgresql.org/docs/current/app-psql.html)) — meta-commands, CLI options, formatting, import/export, scripting |
 | `pre-release-review` | Production pre-release code review and deploy-readiness audit — inspect PRs or git ranges for missing migrations, configs, caches, queues, assets, secrets, service order, and rollout risks |
