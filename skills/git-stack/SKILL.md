@@ -30,8 +30,7 @@ user-invocable: "true"
 | 代码提交 | ./commit | 代码提交 |
 | 代码合并冲突 | ./conflict | 代码冲突解决。 |
 | 工作区worktree | ./worktree | 工作区，worktree创建 |
-| reabase操作 | | 待实现 |
-| PR | | 待实现 |
+| PR、Issues、github相关操作 | | 优先使用`gh`操作相关技能,没有则直接使用`gh`命令 |
 
 ## 危险操作
 
