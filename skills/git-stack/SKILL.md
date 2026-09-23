@@ -15,8 +15,6 @@ user-invocable: "true"
 1. 用户说：提交代码，推送代码，push代码。
 2. 解决代码合并冲突问题。
 3. 创建工作树worktree
-4. 合并提交信息，变基，rebase。
-5. 发版打tag标签
 
 ## 门禁
 
