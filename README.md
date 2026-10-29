@@ -23,6 +23,7 @@ Each skill lives in its own directory under `skills/<name>/` and consists of:
 | [pre-release-review][pre-release-review] | Production pre-release code review and deploy-readiness audit — inspect PRs or git ranges for missing migrations, configs, caches, queues, assets, secrets, service order, and rollout risks |
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) cloud storage manager reference — terminal-based upload, download, sync, copy, move, mount, backup, filtering, encryption, bisync, and multi-provider remote management      |
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface reference — Redis querying, keyspace inspection, monitoring, latency analysis, ACL and cluster management, scripting, and module workflows |
+| [to-task][to-task] | Task decomposition — turn requirements, PRDs, specs, and issues into verifiable task plans with dependencies, acceptance criteria, decision gates, and protected updates |
 
 ## Installation
 
@@ -95,9 +96,13 @@ agent-skills/
 │   │   ├── SKILL.md         # Skill entry point
 │   │   ├── references/      # Detailed reference files
 │   │   └── scripts/         # Helper scripts
-│   └── redis-cli/           # Redis command-line interface
+│   ├── redis-cli/           # Redis command-line interface
+│   │   ├── SKILL.md         # Skill entry point
+│   │   └── references/      # Detailed reference files
+│   └── to-task/             # Task decomposition and planning
 │       ├── SKILL.md         # Skill entry point
-│       └── references/      # Detailed reference files
+│       ├── references/      # Task format and matching JSON/Markdown examples
+│       └── scripts/         # Read-only task plan validator
 ├── CLAUDE.md                # Claude Code workspace instructions
 ├── LICENSE                  # Apache 2.0
 └── README.md                # This file
@@ -113,3 +118,4 @@ agent-skills/
 [pre-release-review]: skills/pre-release-review/SKILL.md
 [rclone-cli]: skills/rclone-cli/SKILL.md
 [redis-cli]: skills/redis-cli/SKILL.md
+[to-task]: skills/to-task/SKILL.md

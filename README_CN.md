@@ -23,6 +23,7 @@ Skill 是带有 YAML frontmatter 的结构化 Markdown 文档，作为特定主�
 | [pre-release-review][pre-release-review] | 生产上线前代码审查与发布就绪度审计 —— 检查 PR 或 git 范围中是否遗漏迁移、配置、缓存、队列、物料、密钥、安全、服务顺序和回滚风险 |
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) 云存储管理器参考 — 终端中的上传、下载、同步、复制、移动、挂载、备份、过滤、加密、双向同步及多云远程管理                         |
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) 命令行界面参考 — Redis 查询、keyspace 检查、监控、延迟分析、ACL 与集群管理、脚本编写及模块工作流      |
+| [to-task][to-task] | 任务拆解 —— 将需求、PRD、SPEC 和 Issue 转为可验证的任务计划，明确依赖、验收和决策前置条件，并保护已有执行记录 |
 
 ## 安装
 
@@ -95,9 +96,13 @@ agent-skills/
 │   │   ├── SKILL.md         # Skill 入口文件
 │   │   ├── references/      # 详细参考文件
 │   │   └── scripts/         # 辅助脚本
-│   └── redis-cli/           # Redis 命令行界面
-│       ├── SKILL.md         # Skill 入口文件
-│       └── references/      # 详细参考文件
+│   ├── redis-cli/           # Redis 命令行界面
+│   │   ├── SKILL.md         # Skill 入口文件
+│   │   └── references/      # 详细参考文件
+│   └── to-task/             # 任务拆解与计划维护
+│       ├── SKILL.md         # 技能入口文件
+│       ├── references/      # 数据格式与对应的 JSON、Markdown 示例
+│       └── scripts/         # 只读任务计划校验脚本
 ├── CLAUDE.md                # Claude Code 工作区指令
 ├── LICENSE                  # Apache 2.0 许可证
 └── README.md                # 英文说明文件
@@ -113,3 +118,4 @@ agent-skills/
 [pre-release-review]: skills/pre-release-review/SKILL.md
 [rclone-cli]: skills/rclone-cli/SKILL.md
 [redis-cli]: skills/redis-cli/SKILL.md
+[to-task]: skills/to-task/SKILL.md
