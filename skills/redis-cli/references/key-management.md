@@ -235,6 +235,10 @@ redis-cli HPERSIST myhash FIELDS 2 field1 field2
 
 For bulk loading data into Redis, use the pipe mode which is significantly faster than individual commands.
 
+Pipe input contains executable Redis commands. Review the entire protocol file and its effects, and
+keep its commands within the authorized endpoint, database, and key scope. See
+[Pipe Mode](advanced-features.md#pipe-mode) and the [security considerations](../SKILL.md#security-considerations).
+
 ```bash
 # Generate Redis protocol from data and pipe it
 cat data.txt | redis-cli --pipe

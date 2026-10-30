@@ -391,8 +391,11 @@ Ensure the crontab is added, so that above nanny script runs every 5 minutes.
 
 ## Step 8: Optional: Setup NFS server to access the mount points of rclone
 
-Let's say you want to make the rclone mount path /opt/mnt/bucket-a available
-as a NFS server export so that other clients can access it by using a NFS client.
+Use this section only when exporting `/opt/mnt/bucket-a` over NFS is authorized.
+Choose the client addresses, access mode, and network boundary before configuring
+the service. The example below is read-only for one client; replace the documentation
+address `192.0.2.10` with the approved client IP. Never use a wildcard client export.
+Read-write access requires authorization for the affected bucket and paths.
 
 ### Step 8a : Setup NFS server
 
@@ -402,22 +405,17 @@ Install NFS Utils
 sudo yum install -y nfs-utils
 ```
 
-Export the desired directory via NFS Server in the same machine where rclone
-has mounted to, ensure NFS service has desired permissions to read the directory.
-If it runs as root, then it will have permissions for sure, but if it runs
-as separate user then ensure that user has necessary desired privileges.
+The server must have permission to read the mount. Keep the existing owner and
+permissions unless changing them is part of the requested setup. `root_squash`
+limits client-root privileges but does not authenticate users: use a trusted
+private network or configured Kerberos (for example `sec=krb5p`), not public
+AUTH_SYS access.
 
 ```sh
-# this gives opc user and adm (administrators group) ownership to the path, so any user belonging to adm group will be able to access the files.
-[opc@tools ~]$ sudo chown -R opc:adm /opt/mnt/bucket-a/
-[opc@tools ~]$ sudo chmod 764 /opt/mnt/bucket-a/
-
-# Not export the mount path of rclone for exposing via nfs server
-# There are various nfs export options that you should keep per desired usage.
-# Syntax is
-# <path> <allowed-ipaddr>(<option>)
+# Add this entry only after replacing the example address with the authorized client.
+# /etc/exports syntax: <path> <client>(<options>)
 [opc@tools ~]$ cat /etc/exports
-/opt/mnt/bucket-a *(fsid=1,rw)
+/opt/mnt/bucket-a 192.0.2.10(ro,sync,root_squash,fsid=1)
 
 
 # Restart NFS server
@@ -427,7 +425,7 @@ as separate user then ensure that user has necessary desired privileges.
 # Show Export paths
 [opc@tools ~]$ showmount -e
 Export list for tools:
-/opt/mnt/bucket-a *
+/opt/mnt/bucket-a 192.0.2.10
 
 # Know the port NFS server is running as, in this case it's listening on port 2049
 [opc@tools ~]$ sudo rpcinfo -p | grep nfs
@@ -435,9 +433,11 @@ Export list for tools:
 100003 4 tcp 2049 nfs
 100227 3 tcp 2049 nfs_acl
 
-# Allow NFS service via firewall
-[opc@tools ~]$ sudo firewall-cmd --add-service=nfs --permanent
-Warning: ALREADY_ENABLED: nfs
+# Inspect the applicable zone; replace ZONE and the client address below.
+[opc@tools ~]$ sudo firewall-cmd --zone=ZONE --list-all
+
+# Allow NFS only from the authorized client, not the entire zone.
+[opc@tools ~]$ sudo firewall-cmd --zone=ZONE --add-rich-rule='rule family="ipv4" source address="192.0.2.10/32" service name="nfs" accept' --permanent
 success
 [opc@tools ~]$ sudo firewall-cmd --reload
 success
@@ -463,6 +463,11 @@ Apr 19 17:59:58 tools systemd[1]: Starting NFS server and services...
 Apr 19 17:59:58 tools systemd[1]: Started NFS server and services.  
 ```
 
+An existing zone-wide NFS allow rule can defeat this restriction. Review current
+rules and resolve any broader exposure within the authorized network scope before
+enabling access. This example covers NFSv4; if NFSv3 is required, separately scope
+its RPC/mountd ports to the same approved clients rather than broadly opening them.
+
 ### Step 8b : Setup NFS client
 
 Now to connect to the NFS server from a different client machine, ensure the
@@ -477,17 +482,10 @@ In the client machine Mount the external NFS
 
 # In /etc/fstab, add the below entry
 [opc@base-inst-boot ~]$ cat /etc/fstab | grep nfs
-<ProvideYourIPAddress>:/opt/mnt/bucket-a /opt/mnt/buckert-a nfs rw 0 0
+<ProvideYourIPAddress>:/opt/mnt/bucket-a /opt/mnt/bucket-a nfs ro,vers=4 0 0
 
-# remount so that newly added path gets mounted.
-[opc@base-inst-boot ~]$ sudo mount -av
-/ : ignored
-/boot : already mounted
-/boot/efi : already mounted
-/var/oled : already mounted
-/dev/shm : already mounted
-/home/opc/share_drive/bucketa: already mounted
-/opt/mnt/bucket-a: successfully mounted # this is the NFS mount
+# Mount only the authorized path.
+[opc@base-inst-boot ~]$ sudo mount /opt/mnt/bucket-a
 ```
 
 ### Step 8c : Test Connection

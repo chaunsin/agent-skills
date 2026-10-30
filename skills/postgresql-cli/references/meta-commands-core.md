@@ -101,11 +101,11 @@ Backquote expansion is NOT performed inside single-quoted strings or in lines th
 
 ```sql
 \set logfile /tmp/query.log
-\echo `cat :logfile`              -- expands :logfile before running cat
-\echo `echo :'%varname'`          -- :'...' form is preferred for shell safety
+\echo `cat -- :'logfile'`         -- quotes the filename as one shell argument
+\echo `printf '%s' :'logfile'`    -- prints the path without interpreting its contents
 ```
 
-The `:'varname'` form (quoted) is preferred inside backquotes because it properly escapes special characters. However, `:'varname'` will error if the variable value contains carriage return (`\r`) or line feed (`\n`) characters.
+Inside backquotes, `:'varname'` quotes one shell argument; it does not make an untrusted executable or shell command safe. Unlike SQL literal quoting, it uses shell escaping. It will error if the variable value contains carriage return (`\r`) or line feed (`\n`) characters.
 
 ### SQL Identifier Arguments
 
@@ -356,6 +356,8 @@ Deletes the large object with the specified OID.
 ### `\i` / `\include` filename
 
 Reads and executes input from the file. Relative to current working directory. Use `-` for stdin.
+
+Only execute reviewed files and nested includes from trusted locations: they can run SQL and client-side shell/file commands with the current user's privileges.
 
 **stdin behavior**: When using `\i -`, psql reads from standard input until an EOF indication or `\q` meta-command. This can be used to intersperse interactive input with input from files. Note that Readline editing is only available at the outermost level — it is not active when reading from a nested file.
 

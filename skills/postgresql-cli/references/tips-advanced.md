@@ -140,11 +140,13 @@ psql -c "SELECT 1" mydb
 
 ### Preview Before Executing
 
+Review the script as text before running it, including any nested includes. For an execution rehearsal, use a disposable database and a reviewed script without its own transaction-control commands. `ECHO all` prints commands as they execute; `ROLLBACK` cannot undo shell commands, file writes, or sequence increments.
+
 ```sql
--- Dry-run a script to see what commands will execute (shows SQL, does NOT execute)
+-- Rehearse on a disposable database: this DOES execute the script
 \set ECHO all
 BEGIN;
--- Paste or review migration SQL here, then ROLLBACK instead of COMMIT
+-- Only include a reviewed script without BEGIN/COMMIT/ROLLBACK
 \i migration.sql
 ROLLBACK;
 
@@ -207,7 +209,7 @@ SELECT * FROM users WHERE name = :'name';
 -- However, :'varname' is NOT safe for identifiers or unquoted contexts.
 -- For identifiers (table/column names), use :"varname" (double-quoted form).
 -- For the safest parameterized queries, use \bind:
-SELECT * FROM users WHERE name = $1;
+SELECT * FROM users WHERE name = $1
 \bind 'Robert' \g
 ```
 

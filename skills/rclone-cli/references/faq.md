@@ -179,25 +179,21 @@ these places on Linux.
 "/etc/pki/tls/cacert.pem",            // OpenELEC
 ```
 
-So doing something like this should fix the problem.  It also sets the
-time which is important for SSL to work properly.
-
-```console
-mkdir -p /etc/ssl/certs/
-curl -o /etc/ssl/certs/ca-certificates.crt https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt
-ntpclient -s -h pool.ntp.org
-```
+Check the system clock and the installed CA package first. Within the authorized
+scope, repair clock synchronization or update `ca-certificates` through the
+operating system's trusted package manager. Do not replace the system trust store
+with a downloaded file just to make verification pass.
 
 The two environment variables `SSL_CERT_FILE` and `SSL_CERT_DIR`, mentioned in
 the [x509 package](https://godoc.org/crypto/x509), provide an additional way to
 provide the SSL root certificates on Unix systems other than macOS.
 
-Note that you may need to add the `--insecure` option to the `curl` command line
-if it doesn't work without.
-
-```console
-curl --insecure -o /etc/ssl/certs/ca-certificates.crt https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt
-```
+Do not bypass TLS verification to fetch replacement CA certificates. If package
+retrieval is also blocked, obtain a signed CA package through an independently
+trusted channel and verify it before installation. For a private service, use an
+authorized CA file whose fingerprint was verified separately, then configure
+`--ca-cert` or the environment variables above for that connection. Stop if the
+certificate's identity cannot be established.
 
 On macOS, you can install
 [ca-certificates](https://formulae.brew.sh/formula/ca-certificates) with

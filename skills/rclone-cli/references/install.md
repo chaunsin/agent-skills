@@ -8,12 +8,18 @@ description: "Rclone Installation"
 
 Rclone is a Go program and comes as a single binary file.
 
+This reference adapts the upstream installation examples to this skill's
+[security boundaries](security.md). Installation, updates, system-wide changes,
+and autostart must be within the user's authorized scope.
+
 ## Quickstart
 
 - [Download](/downloads/) the relevant binary.
-- Extract the `rclone` executable, `rclone.exe` on Windows, from the archive.
+- Authenticate the release manifest and verify the archive before extracting or
+  executing it; follow [verified local installation](security.md#verified-local-installation).
+- Extract the verified `rclone` executable, `rclone.exe` on Windows, from the archive.
 - Run `rclone config` to setup. See [rclone config docs](/docs/) for more details.
-- Optionally configure [automatic execution](#autostart).
+- Configure [automatic execution](#autostart) only for requested recurring work.
 
 See below for some expanded Linux / macOS / Windows instructions.
 
@@ -28,48 +34,20 @@ signatures on the release.
 
 ## Script installation
 
-To install rclone on Linux/macOS/BSD systems, run:
-
-```console
-sudo -v ; curl https://rclone.org/install.sh | sudo bash
-```
-
-For beta installation, run:
-
-```console
-sudo -v ; curl https://rclone.org/install.sh | sudo bash -s beta
-```
-
-Note that this script checks the version of rclone installed first and
-won't re-download if not needed.
+For Linux/macOS/BSD, follow [verified local installation](security.md#verified-local-installation)
+for prerequisites, release authentication, and exact helper arguments. The shell
+entry point at `../scripts/install.sh` accepts the same arguments; the former
+no-argument and `beta` interfaces are retired.
 
 ## Linux installation {#linux}
 
 ### Precompiled binary {#linux-precompiled}
 
-Fetch and unpack
-
-```console
-curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip
-unzip rclone-current-linux-amd64.zip
-cd rclone-*-linux-amd64
-```
-
-Copy binary file
-
-```console
-sudo cp rclone /usr/bin/
-sudo chown root:root /usr/bin/rclone
-sudo chmod 755 /usr/bin/rclone
-```
-
-Install manpage
-
-```console
-sudo mkdir -p /usr/local/share/man/man1
-sudo cp rclone.1 /usr/local/share/man/man1/
-sudo mandb
-```
+Select the host architecture and a pinned stable release, authenticate its
+manifest, and use [verified local installation](security.md#verified-local-installation).
+The helper defaults to `~/.local/bin`; system directories and manpages are not
+modified. If a system-wide installation is required, use the platform's package
+manager within the authorized scope.
 
 Run `rclone config` to setup. See [rclone config docs](/docs/) for more details.
 
@@ -112,35 +90,10 @@ More information on [macports.org](https://ports.macports.org/port/rclone/).
 
 ### Precompiled binary, using curl {#macos-precompiled}
 
-To avoid problems with macOS gatekeeper enforcing the binary to be signed and
-notarized it is enough to download with `curl`.
-
-Download the latest version of rclone.
-
-```console
-cd && curl -O https://downloads.rclone.org/rclone-current-osx-amd64.zip
-```
-
-Unzip the download and cd to the extracted folder.
-
-```console
-unzip -a rclone-current-osx-amd64.zip && cd rclone-*-osx-amd64
-```
-
-Move rclone to your $PATH. You will be prompted for your password.
-
-```console
-sudo mkdir -p /usr/local/bin
-sudo mv rclone /usr/local/bin/
-```
-
-(the `mkdir` command is safe to run, even if the directory already exists).
-
-Remove the leftover files.
-
-```console
-cd .. && rm -rf rclone-*-osx-amd64 rclone-current-osx-amd64.zip
-```
+Choose `osx-arm64` for Apple Silicon or `osx-amd64` for Intel, then follow
+[verified local installation](security.md#verified-local-installation).
+Downloading with `curl` does not establish authenticity; verify the signed
+manifest and archive before installing or running the binary.
 
 Run `rclone config` to setup. See [rclone config docs](/docs/) for more details.
 
@@ -159,31 +112,29 @@ gatekeeper quarantine attribute. Starting from Catalina, when attempting to run
 macOS cannot verify that this app is free from malware.
 ```
 
-The simplest fix is to run
-
-```console
-xattr -d com.apple.quarantine rclone
-```
+Verify the publisher and release first. Follow the official installation
+instructions and the machine's security policy for any Gatekeeper exception;
+do not remove quarantine merely to run an unverified download.
 
 ## Windows installation {#windows}
 
 ### Precompiled binary {#windows-precompiled}
 
-Fetch the correct binary for your processor type by clicking on these
-links. If not sure, use the first link.
+Choose an exact stable version from the [official downloads](https://rclone.org/downloads/)
+and the correct architecture: `windows-amd64` (Intel/AMD 64 bit), `windows-386`
+(32 bit), or `windows-arm64`. Authenticate its signed `SHA256SUMS` and compare
+the ZIP's digest using the [official release-signing procedure](https://rclone.org/release_signing/)
+before opening or running it. Do not substitute a mutable `current` download.
+The bundled Unix installer does not support Windows.
 
-- [Intel/AMD - 64 Bit](https://downloads.rclone.org/rclone-current-windows-amd64.zip)
-- [Intel/AMD - 32 Bit](https://downloads.rclone.org/rclone-current-windows-386.zip)
-- [ARM - 64 Bit](https://downloads.rclone.org/rclone-current-windows-arm64.zip)
-
-Open this file in the Explorer and extract `rclone.exe`. Rclone is a
+After verification, open the ZIP in Explorer and extract `rclone.exe`. Rclone is a
 portable executable so you can place it wherever is convenient.
 
 Open a CMD window (or powershell) and run the binary. Note that rclone
 does not launch a GUI by default, it runs in the CMD Window.
 
 - Run `rclone.exe config` to setup. See [rclone config docs](/docs/) for more details.
-- Optionally configure [automatic execution](#autostart).
+- Configure [automatic execution](#autostart) only for requested recurring work.
 
 If you are planning to use the [rclone mount](/commands/rclone_mount/)
 feature then you will need to install the third party utility

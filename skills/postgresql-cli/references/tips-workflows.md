@@ -215,15 +215,17 @@ SELECT current_setting('is_production', true) = 'true' AS is_prod \gset
 
 ### Dynamic SQL with \gexec
 
+Quote schema and table names with `format('%I', ...)`, including names read from system catalogs. Review the generated statements without `\gexec` first and restrict them to the intended schemas. `ON_ERROR_STOP` stops on errors; it does not prevent SQL injection.
+
 ```sql
 -- Generate and execute ANALYZE for all tables
-SELECT 'ANALYZE ' || schemaname || '.' || tablename
+SELECT format('ANALYZE %I.%I;', schemaname, tablename)
 FROM pg_tables
 WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
 \gexec
 
 -- Generate GRANT statements
-SELECT 'GRANT SELECT ON ' || tablename || ' TO readonly;'
+SELECT format('GRANT SELECT ON TABLE %I.%I TO readonly;', schemaname, tablename)
 FROM pg_tables
 WHERE schemaname = 'public';
 \gexec
@@ -239,7 +241,7 @@ FROM generate_series('2024-01-01'::date, '2024-12-01'::date, '1 month') AS d;
 
 ### Backquote Expansion (Shell Command Substitution)
 
-Text inside backquotes (`` ` ``) in meta-command arguments is executed as a shell command, and the output replaces the backquoted text. This lets you inject dynamic values from the OS into psql:
+Text inside backquotes (`` ` ``) in meta-command arguments is executed as a shell command, and the output replaces the backquoted text. Commands run with the local user's privileges: keep the command itself trusted and quote dynamic arguments as described below. This lets you insert dynamic values from the OS into psql:
 
 ```sql
 -- Inject current date into a variable
@@ -290,6 +292,8 @@ SELECT oid, relname FROM pg_class WHERE relname = 'users';
 ```
 
 ### Include Other Scripts
+
+Review scripts and their nested includes before execution. `\i` and `\ir` can execute SQL and client-side shell/file commands; their path resolution does not establish trust.
 
 ```sql
 -- Relative to current working directory

@@ -35,8 +35,9 @@ keep the same sections, priority labels, conclusion values, and finding fields.
 
 ## Owner inference
 
-- Prefer `git blame` on changed lines for the file and line that caused the finding.
-- If blame is unavailable or misleading, use `git log --format="%h %an %s" -- <path>`.
+- Use the [guarded Git workflow](../SKILL.md#read-only-evidence-collection) for ownership
+  inspection: prefer `blame` on the relevant changed lines; fall back to `log` authors
+  for the file when blame is unavailable or misleading.
 - If several commits contributed to the same release risk, list all relevant author names.
 - Mark owners as "inferred" and do not expose email addresses.
 - If no owner can be inferred, write `Unknown (not inferable from local git evidence)`.

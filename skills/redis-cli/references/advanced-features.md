@@ -13,11 +13,16 @@
 
 Redis supports server-side Lua scripting for atomic multi-command operations.
 
+Review the complete script or function and authorize its commands, key scope, and effects before
+execution, including write operations. Use a trusted, reviewed file rather than a shared temporary
+path. Lua support itself is not an OS shell execution feature. Apply the
+[security considerations](../SKILL.md#security-considerations) to the connection and inputs.
+
 ### Running Scripts
 
 ```bash
 # Run script from file with --eval
-redis-cli --eval /tmp/script.lua key1 key2 , arg1 arg2 arg3
+redis-cli --eval ./reviewed-script.lua key1 key2 , arg1 arg2 arg3
 
 # The comma separates KEYS[] from ARGV[]:
 # key1, key2 → KEYS[1], KEYS[2]
@@ -57,10 +62,10 @@ return results
 
 ```bash
 # Enable debugger (--ldb)
-redis-cli --ldb --eval /tmp/script.lua key1 , arg1
+redis-cli --ldb --eval ./reviewed-script.lua key1 , arg1
 
 # Synchronous mode (blocks server — for debugging only)
-redis-cli --ldb-sync-mode --eval /tmp/script.lua key1 , arg1
+redis-cli --ldb-sync-mode --eval ./reviewed-script.lua key1 , arg1
 ```
 
 **Async mode** (default): server continues serving other clients during debugging. Script changes are rolled back from server memory after debugging.
@@ -141,6 +146,10 @@ redis-cli SPUBLISH shardchannel "message"
 
 Transfer raw Redis protocol from stdin to the server. This is the fastest way to bulk-insert data.
 
+RESP input is a stream of executable Redis commands, not inert data. Review the complete source and
+its effects before sending it; a file named `data.protocol` can contain destructive commands. Use only
+the authorized endpoint, database, and key scope.
+
 ```bash
 # Basic pipe mode
 cat data.protocol | redis-cli --pipe
@@ -216,35 +225,53 @@ redis-cli MONITOR | grep "SET"
 
 ## Getting Input from Other Programs
 
+`-x` and `-X` transmit stdin bytes to the connected Redis server. Use synthetic data for demonstrations;
+for a real transfer, the user's request must cover both the source and destination. Do not substitute
+system files or secrets for demo data. Protect any exported payload as sensitive data.
+
 ### Read Last Argument from stdin (-x)
 
 ```bash
-# Set key to contents of a file
-cat /etc/services | redis-cli -x SET net_services
+# Send synthetic data to a disposable demo key
+printf 'demo payload\n' | redis-cli -x SET demo:payload
 
 # Check the stored value
-redis-cli GETRANGE net_services 0 50
+redis-cli GETRANGE demo:payload 0 50
 ```
+
+`-x` appends stdin as the **last** argument. If options must follow the value (for example, `SET ... NX`),
+use `-X` to place the value at a tag instead of appending it after the options.
 
 ### Read Tagged Argument from stdin (-X)
 
 ```bash
-# Dump and restore a key atomically
-redis-cli -D "" --raw dump mykey > /tmp/mykey.dump
-redis-cli -X dump_tag restore mykey2 0 dump_tag replace < /tmp/mykey.dump
+# Copy an existing demo key to a new key with a 60-second TTL; refuse an existing destination
+redis-cli -e -D "" --raw DUMP demo:source |
+  redis-cli -e -X dump_tag RESTORE demo:copy 60000 dump_tag
 ```
+
+The two commands are separate operations, not an atomic snapshot. `-D "" --raw` preserves the binary
+payload without a trailing delimiter; do not put serialized bytes in shell command substitution.
+`DUMP` does not include the source TTL, so choose the destination TTL explicitly (`60000` milliseconds
+here). `-e` reports Redis errors as a nonzero exit status. Stop on `BUSYKEY`; do not automatically add
+`REPLACE` or delete the destination. Intentional replacement must be authorized for that key, with a
+recovery plan for real data. The [RESTORE reference](data-query-commands.md#key-operations) retains
+the optional `REPLACE` syntax.
 
 ### Pipe Multiple Commands
 
-```bash
-# Execute commands from a text file
-cat /tmp/commands.txt | redis-cli
+Review the complete command file and authorize its side effects before execution. File redirection
+executes every command in the file; its name or extension does not make it safe.
 
-# commands.txt format (one command per line):
-# SET item:3374 100
-# INCR item:3374
-# APPEND item:3374 xxx
-# GET item:3374
+```bash
+# Execute a reviewed command file
+redis-cli < ./reviewed-commands.txt
+
+# reviewed-commands.txt format (one command per line):
+# SET demo:item 100
+# INCR demo:item
+# APPEND demo:item xxx
+# GET demo:item
 ```
 
 ### Feed Continuous Data

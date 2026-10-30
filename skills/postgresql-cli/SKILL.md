@@ -388,11 +388,15 @@ SELECT count(*) FROM queue WHERE status = 'pending';
 
 ### Destructive Operations Checklist
 
-Before running any destructive SQL, verify impact first:
+Before running destructive SQL, inspect the intended rows with `SELECT`/`COUNT`.
+Transactions below are actual execution: they acquire locks and run triggers.
+`ROLLBACK` does not undo sequence increments or external side effects; use a disposable
+database for execution rehearsals.
 
 ```sql
 -- BEFORE DELETE: check how many rows are affected
 SELECT count(*) FROM users WHERE condition;  -- verify scope
+-- Execute only after the target and effects are authorized
 BEGIN;
 DELETE FROM users WHERE condition RETURNING *;  -- see what was deleted
 -- ROLLBACK if wrong; COMMIT only after verification
@@ -406,31 +410,32 @@ DELETE FROM users WHERE condition RETURNING *;  -- see what was deleted
 
 | Command/Pattern                         | Risk                                                      | Mitigation                                                                                           |
 | --------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `\gexec`                              | Executes generated SQL without confirmation               | Always inspect the generating query first by running it without `\gexec`; set `ON_ERROR_STOP on` |
+| `\gexec`                              | Executes generated SQL without confirmation               | Quote generated identifiers with `format('%I', ...)`; preview without `\gexec`; set `ON_ERROR_STOP on` |
 | `\! command`                          | Arbitrary shell execution                                 | No sandboxing; commands run with psql user's full privileges                                         |
 | `\copy ... program 'cmd'`             | Shell command injection if filename comes from user input | Never concatenate untrusted input into the `program` string                                        |
 | `\deu+`                               | May display remote user passwords                         | Avoid using `\deu+` in shared/piped output; use `\deu` without `+`                             |
-| `DELETE`/`UPDATE` without `WHERE` | Affects every row in the table                            | Always use `WHERE`; wrap in `BEGIN`/`ROLLBACK` to preview                                      |
+| `DELETE`/`UPDATE` without `WHERE` | Affects every row in the table                            | Inspect the intended rows with `SELECT`/`COUNT`; use a scoped `WHERE`. A transaction is execution, not a dry run. |
 | `DROP DATABASE/TABLE`                 | Irreversible data loss                                    | Verify you're on the correct database with `\conninfo` first                                       |
 
 ### Variable Interpolation Safety
 
-psql variables are **plain text substitution**, not parameterized queries. This means:
+psql variables use **textual interpolation**, not parameterized queries. Raw `:varname` inserts SQL syntax; quote values and identifiers for their intended context:
 
 ```sql
--- UNSAFE: if :name contains "Robert'); DROP TABLE users;--" it will execute the injection
-SELECT * FROM users WHERE name = :'name';
+-- UNSAFE: raw substitution allows the variable value to become SQL syntax
+SELECT * FROM users WHERE name = :name;
 
--- SAFER: use \prompt for interactive input (user sees what they typed)
+-- SAFE for string values: :'name' escapes quotes and other special characters
+-- \prompt only collects input; the quoted substitution provides the protection
 \prompt 'Enter name: ' search_name
 SELECT * FROM users WHERE name = :'search_name';
 
 -- SAFEST: use \bind for programmatic parameter passing (truly parameterized)
-SELECT * FROM users WHERE name = $1;
+SELECT * FROM users WHERE name = $1
 \bind 'Robert' \g
 ```
 
-The `:'varname'` form (quoted) is always safer than `:varname` (unquoted), because unquoted substitution can break SQL syntax or enable injection. Use `:"varname"` for identifiers (table/column names) — it properly escapes embedded double quotes.
+Use `:'varname'` for SQL string values and `:"varname"` for identifiers (table/column names); both escape their respective quote characters. Inside backquoted shell commands, `:'varname'` instead quotes one shell argument: keep the executable and shell syntax trusted.
 
 ## When to Use What
 

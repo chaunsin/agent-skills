@@ -59,6 +59,11 @@ redis-cli -6 PING   # Prefer IPv6
 
 ## CLI Flags Reference
 
+This is an abridged option reference, with synthetic examples rather than a verbatim help dump.
+Examples do not authorize execution: apply the [security considerations](../SKILL.md#security-considerations)
+to the endpoint, database, keys, input files, and effects before running them. Review a Lua file's complete
+contents before `--eval`; it executes Redis commands with the connected user's permissions.
+
 ```
 Usage: redis-cli [OPTIONS] [cmd [arg [arg ...]]]
 
@@ -134,13 +139,15 @@ Special Modes:
   --cluster <cmd>    Cluster management command
 
 Examples:
-  redis-cli -u redis://default:PASSWORD@localhost:6379/0
-  cat /etc/passwd | redis-cli -x set mypasswd
-  redis-cli -D "" --raw dump key > key.dump && redis-cli -X dump_tag restore key2 0 dump_tag replace < key.dump
-  redis-cli -r 100 lpush mylist x
-  redis-cli -r 100 -i 1 info | grep used_memory_human:
-  redis-cli --eval myscript.lua key1 key2 , arg1 arg2 arg3
+  redis-cli --askpass -h 127.0.0.1 PING
+  printf 'demo payload\n' | redis-cli -x SET demo:payload
+  redis-cli -r 5 PING
+  redis-cli -r 5 -i 1 INFO memory
+  redis-cli --eval ./reviewed-script.lua demo:key , demo-arg
 ```
+
+For binary `DUMP`/`RESTORE` without default overwriting, see
+[Read Tagged Argument from stdin](advanced-features.md#read-tagged-argument-from-stdin--x).
 
 ## Environment Variables
 
