@@ -23,7 +23,7 @@ Skill 是带有 YAML frontmatter 的结构化 Markdown 文档，作为特定主�
 | [pre-release-review][pre-release-review] | 生产上线前代码审查与发布就绪度审计 —— 检查 PR 或 git 范围中是否遗漏迁移、配置、缓存、队列、物料、密钥、安全、服务顺序和回滚风险 |
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) 云存储管理器参考 — 终端中的上传、下载、同步、复制、移动、挂载、备份、过滤、加密、双向同步及多云远程管理                         |
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) 命令行界面参考 — Redis 查询、keyspace 检查、监控、延迟分析、ACL 与集群管理、脚本编写及模块工作流      |
-| [to-task][to-task] | 任务拆解 —— 将需求、PRD、SPEC 和 Issue 转为可验证的任务计划，明确依赖、验收和决策前置条件，并保护已有执行记录 |
+| [to-task][to-task] | 任务拆解 —— 生成依赖与验收明确的任务计划；保存前询问记录方式，默认在本地按功能分目录、每个任务一份 Markdown，也支持 GitHub/GitLab Issues 及用户明确指定的可用任务系统 |
 
 ## 安装
 

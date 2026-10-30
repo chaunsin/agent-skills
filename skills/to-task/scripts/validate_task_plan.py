@@ -16,11 +16,11 @@ from pathlib import Path
 
 PLAN_KEYS = {
     "version", "plan_id", "revision", "project", "goal", "requirements",
-    "tasks", "open_questions", "assumptions",
+    "scope", "out_of_scope", "tasks", "open_questions", "assumptions",
 }
 TASK_KEYS = {
     "id", "title", "type", "priority", "status", "goal", "requirement_ids",
-    "scope", "out_of_scope", "inputs", "outputs", "constraints", "acceptance",
+    "scope", "out_of_scope", "inputs", "references", "outputs", "constraints", "acceptance",
     "verification", "depends_on", "blocks", "related_to",
 }
 EXECUTION_FIELDS = {"evidence", "result", "execution", "started_at", "completed_at"}
@@ -49,18 +49,23 @@ def load_plan(path):
 
 
 def same_value(left, right):
-    """保留类型，避免把 true 与 1 等扩展值误判为相同。"""
-    if type(left) is not type(right):
-        return False
-    if isinstance(left, dict):
-        return left.keys() == right.keys() and all(
-            same_value(value, right[key]) for key, value in left.items()
-        )
-    if isinstance(left, list):
-        return len(left) == len(right) and all(
-            same_value(a, b) for a, b in zip(left, right)
-        )
-    return left == right
+    """迭代比较 JSON 值，保留类型且不消耗深层扩展数据的递归栈。"""
+    pending = [(left, right)]
+    while pending:
+        current_left, current_right = pending.pop()
+        if type(current_left) is not type(current_right):
+            return False
+        if isinstance(current_left, dict):
+            if current_left.keys() != current_right.keys():
+                return False
+            pending.extend((value, current_right[key]) for key, value in current_left.items())
+        elif isinstance(current_left, list):
+            if len(current_left) != len(current_right):
+                return False
+            pending.extend(zip(current_left, current_right))
+        elif current_left != current_right:
+            return False
+    return True
 
 
 def has_execution_record(task, fields):
@@ -142,6 +147,9 @@ def validate_plan(plan, new_plan=False):
 
     for key in ("version", "project", "goal"):
         checks.string(plan.get(key), key)
+    for key in ("scope", "out_of_scope"):
+        if key in plan:
+            checks.strings(plan[key], key)
     if plan.get("version") != "1.0":
         checks.error("version", "仅支持格式 1.0；旧格式须保留原数据并显式适配")
     if "plan_id" in plan or "revision" in plan:
@@ -179,6 +187,15 @@ def validate_plan(plan, new_plan=False):
             checks.error(f"{location}.status", "新任务应初始化为 pending")
         for key in ("scope", "inputs", "outputs", "out_of_scope", "constraints"):
             checks.strings(task.get(key), f"{location}.{key}", key in ("scope", "inputs", "outputs"))
+        if "references" in task:
+            references = checks.objects(task["references"], f"{location}.references")
+            for number, reference in enumerate(references):
+                reference_location = f"{location}.references[{number}]"
+                for key in ("title", "uri", "summary"):
+                    checks.string(reference.get(key), f"{reference_location}.{key}")
+                for key in ("section", "version"):
+                    if key in reference:
+                        checks.string(reference[key], f"{reference_location}.{key}")
         if "requirements" in plan or "requirement_ids" in task:
             checks.strings(task.get("requirement_ids"), f"{location}.requirement_ids", True, True)
             if "requirements" not in plan:
@@ -310,6 +327,9 @@ def validate_update(plan, previous, execution_fields=()):
         checks.error("revision", "首次启用修订字段应从 1 开始")
     if "requirements" in previous and "requirements" not in plan:
         checks.error("requirements", "不得在普通更新中移除已有需求映射")
+    for key in ("scope", "out_of_scope"):
+        if key in previous and key not in plan:
+            checks.error(key, "不得在普通更新中删除已有计划级范围字段；无额外条目时保留空数组")
     for key in previous.keys() - PLAN_KEYS:
         if key not in plan or not same_value(previous[key], plan[key]):
             checks.error(key, "不得删除或改写计划扩展字段")
@@ -332,6 +352,8 @@ def validate_update(plan, previous, execution_fields=()):
                 checks.error(f"{location}.{key}", "不得删除或改写任务扩展字段")
         if has_acceptance_links(old) and not has_acceptance_links(current):
             checks.error(location, "不得在普通更新中移除已有验收关联")
+        if "references" in old and "references" not in current:
+            checks.error(location, "不得在普通更新中删除已有 references 字段；没有相关资料时保留空数组")
         if old["status"] != "pending" or has_execution_record(old, execution_fields):
             protected_requirements.update(old.get("requirement_ids", []))
             old_core = {key: value for key, value in old.items() if key != "blocks"}
