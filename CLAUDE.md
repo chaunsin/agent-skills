@@ -10,22 +10,17 @@ A collection of AI agent skills — self-contained Markdown knowledge bases that
 
 Each skill lives under `skills/<name>/`:
 
-- `SKILL.md` — Entry point with YAML frontmatter (`name`, `description`, `metadata`) and a comprehensive quick reference
+- `SKILL.md` — Entry point with YAML frontmatter (`name`, `description`, `metadata`), essential instructions, and links to conditional detail
 - Supporting Markdown — Optional detailed syntax, edge cases, workflows, or templates in `references/`, `reference/`, or files alongside `SKILL.md`
 - `scripts/` — (optional) Helper scripts for validation, inventory, or installation
+- `assets/` — (optional) Templates and other resources used in generated output
 - `agents/` — (optional) Agent-specific configurations (e.g., OpenAI agent YAML)
 
-The `description` frontmatter field is the **activation trigger** — it lists keywords and scenarios that cause the agent to load the skill.
-
-`testdata/` holds source material used during skill authoring. It is gitignored and must not contain hardcoded absolute paths.
+The `description` frontmatter field guides **skill selection** — it describes the capability and scenarios in which an agent should load the skill.
 
 ## Skill Authoring Conventions
 
-- All skill content is written in **English** regardless of user language
-- SKILL.md frontmatter fields: `name`, `description`, `metadata` (author, version)
-- Cross-references between SKILL.md and reference files use **relative paths**
-- Main SKILL.md provides a self-contained quick reference; `references/*.md` files split out detailed content
-- README.md and README_CN.md must stay in sync when skills are added/removed
+Before creating, modifying, or reviewing a skill, read and follow [Skill Authoring and Maintenance](docs/skill-authoring.md). It is the canonical guide for content quality, readable structure, standard format and progressive disclosure, evidence for changes, portability, security assessment, and validation.
 
 ## Current Skills
 

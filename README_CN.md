@@ -6,13 +6,14 @@ AI agent 技能集合 — 可被 AI 编程助手（如 Claude Code、Copilot CLI
 
 ## 什么是 Skill？
 
-Skill 是带有 YAML frontmatter 的结构化 Markdown 文档，作为特定主题的综合参考。AI agent 加载 skill 后可以在无需实时搜索文档的情况下，提供更准确、更具上下文感知的协助。
+Skill 是一个包含 `SKILL.md` 入口文件和可选辅助资源的目录，为 agent 提供可复用的任务指导和领域知识，并按需加载详细内容。
 
 每个 skill 位于 `skills/<name>/` 目录下，包含：
 
 - **`SKILL.md`** — 入口文件，包含 frontmatter 元数据和快速参考指南
 - **辅助 Markdown 文档**（可选）— 详细语法、边缘情况、工作流或模板，位于 `references/`、`reference/` 或与 `SKILL.md` 同级的文件中
 - **`scripts/`**（可选）— 用于验证、盘点或安装的辅助脚本
+- **`assets/`**（可选）— 用于生成结果的模板及其他资源
 - **`agents/`**（可选）— 智能体专用配置与界面元数据
 
 ## 可用 Skills
@@ -81,10 +82,16 @@ cp -r skills/<skill-name> ~/.claude/skills/
 
 规划工作时，可以用 `grill` 盘问未明确的决策，用 `prd` 定义产品需求，用 `to-spec` 明确技术契约，用 `to-task` 生成可验证的任务计划。按当前需要选择技能，无需依次执行全部流程；`to-spec` 默认接收 PRD 内容，也支持明确提供或指定的其他来源。需要提交、推送、解决冲突或准备 worktree 时，使用 `git-stack`。
 
+## 贡献指南
+
+新增或修改技能前，请遵循[技能编写与维护规范](docs/skill-authoring.md)（英文）。规范涵盖精简且完整的内容、清晰排版、渐进披露、修改依据、通用性、安全问题判断及验证要求。
+
 ## 仓库结构
 
 ```text
 agent-skills/
+├── docs/
+│   └── skill-authoring.md   # 技能编写与维护规范
 ├── skills/                  # Skill 目录
 │   ├── drizzle-migration-conflict/ # Drizzle Kit 迁移冲突处理与预防
 │   │   ├── SKILL.md         # Skill 入口文件

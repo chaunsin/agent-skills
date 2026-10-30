@@ -6,13 +6,14 @@ A collection of AI agent skills — self-contained knowledge bases that can be l
 
 ## What is a Skill?
 
-A skill is a structured Markdown document with YAML frontmatter that serves as a comprehensive reference on a topic. AI agents load skills to provide more accurate, context-aware assistance without needing to search documentation in real time.
+A skill is a directory with a `SKILL.md` entry point and optional supporting resources. It gives agents reusable task guidance and domain knowledge, with detail loaded as needed.
 
 Each skill lives in its own directory under `skills/<name>/` and includes:
 
 - **`SKILL.md`** — Entry point with frontmatter metadata and a quick-reference guide
 - **Supporting Markdown** (optional) — Detailed syntax, edge cases, workflows, or templates in `references/`, `reference/`, or files alongside `SKILL.md`
 - **`scripts/`** (optional) — Helper scripts for validation, inventory, or installation
+- **`assets/`** (optional) — Templates and other resources used in generated output
 - **`agents/`** (optional) — Agent-specific configuration and interface metadata
 
 ## Available Skills
@@ -81,10 +82,16 @@ For example, with the postgresql-cli skill installed, asking "how to list all ta
 
 For planning, use `grill` to examine unresolved decisions, `prd` to define product requirements, `to-spec` to define technical contracts, and `to-task` to produce a verifiable task plan. Choose the skill for the work you need; this is not a mandatory sequence. `to-spec` defaults to PRD content and also accepts other explicitly supplied or selected sources. Use `git-stack` when you need to commit, push, resolve conflicts, or prepare a worktree.
 
+## Contributing
+
+Before creating or changing a skill, follow [Skill Authoring and Maintenance](docs/skill-authoring.md). The guide covers concise and complete content, readable structure, progressive disclosure, evidence for changes, portability, security assessment, and validation.
+
 ## Repository Structure
 
 ```text
 agent-skills/
+├── docs/
+│   └── skill-authoring.md   # Skill authoring and maintenance rules
 ├── skills/                  # Skill directories
 │   ├── drizzle-migration-conflict/ # Drizzle Kit migration conflict repair and prevention
 │   │   ├── SKILL.md         # Skill entry point
