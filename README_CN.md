@@ -11,18 +11,24 @@ Skill 是带有 YAML frontmatter 的结构化 Markdown 文档，作为特定主�
 每个 skill 位于 `skills/<name>/` 目录下，包含：
 
 - **`SKILL.md`** — 入口文件，包含 frontmatter 元数据和快速参考指南
-- **`references/`** — 模块化的深入文件，涵盖详细语法、边缘情况和工作流
+- **辅助 Markdown 文档**（可选）— 详细语法、边缘情况、工作流或模板，位于 `references/`、`reference/` 或与 `SKILL.md` 同级的文件中
+- **`scripts/`**（可选）— 用于验证、盘点或安装的辅助脚本
+- **`agents/`**（可选）— 智能体专用配置与界面元数据
 
 ## 可用 Skills
 
 | Skill                            | 说明                                                                                                                                                     |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [drizzle-migration-conflict][drizzle-migration-conflict] | Drizzle Kit 迁移冲突诊断与团队协作工作流 —— 检查 `_journal.json`、snapshot、迁移目录、merge conflict、`drizzle-kit check` 与 CI 预防方案 |
+| [git-stack][git-stack] | Git 工作流 —— 提交与推送更改、处理合并或变基冲突、创建或复用 worktree，明确操作范围并复用有效验证结果 |
+| [grill][grill] | 决策访谈 —— 通过逐轮追问检验计划、想法或设计，用设计树梳理决策依赖，澄清假设并达成共识 |
 | [hugo-to-markdown][hugo-to-markdown] | Hugo 文档与内容转换参考 —— 检查本地 Hugo 配置、shortcode、render hook、front matter 和挂载内容根，生成安全的标准 Markdown 导出                             |
 | [postgresql-cli][postgresql-cli] | [PostgreSQL](https://www.postgresql.org/docs/current/app-psql.html) 交互式终端 (psql) 参考 — 元命令、CLI 选项、格式化、数据导入/导出、脚本编写及高级工作流 |
+| [prd][prd] | 产品需求生成 —— 将想法与澄清后的需求整理为 PRD，在实施前明确目标用户、业务目标、范围、行为和验收标准 |
 | [pre-release-review][pre-release-review] | 生产上线前代码审查与发布就绪度审计 —— 检查 PR 或 git 范围中是否遗漏迁移、配置、缓存、队列、物料、密钥、安全、服务顺序和回滚风险 |
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) 云存储管理器参考 — 终端中的上传、下载、同步、复制、移动、挂载、备份、过滤、加密、双向同步及多云远程管理                         |
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) 命令行界面参考 — Redis 查询、keyspace 检查、监控、延迟分析、ACL 与集群管理、脚本编写及模块工作流      |
+| [to-spec][to-spec] | 技术规格生成 —— 默认使用 PRD 内容，也支持用户明确提供或指定的 ADR、访谈、QA 文档，保留来源追溯并明确实施契约和验证标准 |
 | [to-task][to-task] | 任务拆解 —— 生成依赖与验收明确的任务计划；保存前询问记录方式，默认在本地按功能分目录、每个任务一份 Markdown，也支持 GitHub/GitLab Issues 及用户明确指定的可用任务系统 |
 
 ## 安装
@@ -73,6 +79,8 @@ cp -r skills/<skill-name> ~/.claude/skills/
 
 例如，安装 postgresql-cli skill 后，询问 "how to list all tables in psql" 或 "psql \d 命令" 即会触发该 skill。
 
+规划工作时，可以用 `grill` 盘问未明确的决策，用 `prd` 定义产品需求，用 `to-spec` 明确技术契约，用 `to-task` 生成可验证的任务计划。按当前需要选择技能，无需依次执行全部流程；`to-spec` 默认接收 PRD 内容，也支持明确提供或指定的其他来源。需要提交、推送、解决冲突或准备 worktree 时，使用 `git-stack`。
+
 ## 仓库结构
 
 ```text
@@ -82,16 +90,28 @@ agent-skills/
 │   │   ├── SKILL.md         # Skill 入口文件
 │   │   ├── references/      # 冲突处理、CI 策略、报告模板和来源链接
 │   │   └── scripts/         # 只读迁移结构检查脚本
+│   ├── git-stack/           # Git 提交、推送、冲突处理与工作树
+│   │   ├── SKILL.md         # 技能入口文件
+│   │   ├── commit.md        # 提交与推送流程
+│   │   ├── conflict.md      # 合并与变基冲突处理
+│   │   ├── validation.md    # 验证复用与失败分类
+│   │   └── worktree.md      # 工作树创建与复用
+│   ├── grill/               # 决策访谈与设计树
+│   │   └── SKILL.md         # 技能入口文件
+│   ├── hugo-to-markdown/    # Hugo 文档和内容转标准 Markdown
+│   │   ├── SKILL.md         # Skill 入口文件
+│   │   ├── agents/          # 智能体配置
+│   │   ├── references/      # Hugo 转换规则
+│   │   └── scripts/         # 规则盘点和校验脚本
 │   ├── postgresql-cli/      # PostgreSQL 交互式终端 (psql)
 │   │   ├── SKILL.md         # Skill 入口文件
 │   │   └── references/      # 详细参考文件
+│   ├── prd/                 # 产品需求生成
+│   │   ├── SKILL.md         # 技能入口文件
+│   │   └── reference/       # PRD 文档模板
 │   ├── pre-release-review/  # 生产发布就绪度审查
 │   │   ├── SKILL.md         # Skill 入口文件
 │   │   └── references/      # 检查清单与报告模板
-│   ├── hugo-to-markdown/    # Hugo 文档和内容转标准 Markdown
-│   │   ├── SKILL.md         # Skill 入口文件
-│   │   ├── references/      # Hugo 转换规则
-│   │   └── scripts/         # 规则盘点和校验脚本
 │   ├── rclone-cli/          # Rclone 云存储管理器
 │   │   ├── SKILL.md         # Skill 入口文件
 │   │   ├── references/      # 详细参考文件
@@ -99,6 +119,9 @@ agent-skills/
 │   ├── redis-cli/           # Redis 命令行界面
 │   │   ├── SKILL.md         # Skill 入口文件
 │   │   └── references/      # 详细参考文件
+│   ├── to-spec/             # 根据 PRD 或明确指定的材料生成技术规格
+│   │   ├── SKILL.md         # 中文技能入口文件
+│   │   └── reference/       # SPEC 文档模板
 │   └── to-task/             # 任务拆解与计划维护
 │       ├── SKILL.md         # 技能入口文件
 │       ├── references/      # 数据格式与对应的 JSON、Markdown 示例
@@ -112,10 +135,14 @@ agent-skills/
 
 [Apache License 2.0](LICENSE)
 
-[postgresql-cli]: skills/postgresql-cli/SKILL.md
 [drizzle-migration-conflict]: skills/drizzle-migration-conflict/SKILL.md
+[git-stack]: skills/git-stack/SKILL.md
+[grill]: skills/grill/SKILL.md
 [hugo-to-markdown]: skills/hugo-to-markdown/SKILL.md
+[postgresql-cli]: skills/postgresql-cli/SKILL.md
+[prd]: skills/prd/SKILL.md
 [pre-release-review]: skills/pre-release-review/SKILL.md
 [rclone-cli]: skills/rclone-cli/SKILL.md
 [redis-cli]: skills/redis-cli/SKILL.md
+[to-spec]: skills/to-spec/SKILL.md
 [to-task]: skills/to-task/SKILL.md

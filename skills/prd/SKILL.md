@@ -118,8 +118,8 @@ C. 自定以目录位置或说明
 
 ```markdown
 推荐后续操作
-A: 清空上下文并执行技能 `/prd-to-spec docs/prd/prd-<feature-name>.md 根据prd转成spec文档` (推荐)
-B: 当前上下文执行技能 `/prd-to-spec docs/prd/prd-<feature-name>.md 根据prd转成spec文档`
+A: 清空上下文并执行技能 `/to-spec docs/prd/prd-<feature-name>.md 根据prd转成spec文档` (推荐)
+B: 当前上下文执行技能 `/to-spec docs/prd/prd-<feature-name>.md 根据prd转成spec文档`
 C: 关闭停留在当前继续调整
 ```
 
@@ -128,7 +128,7 @@ C: 关闭停留在当前继续调整
 与其他技能的关系
 
 ```text
-/prd    →     /prd-to-spec   
+/prd    →       /to-spec
  │                │              
  │  Requirements  │  Technical   
  │  (what)        │  (how)  

@@ -11,7 +11,7 @@ A collection of AI agent skills — self-contained Markdown knowledge bases that
 Each skill lives under `skills/<name>/`:
 
 - `SKILL.md` — Entry point with YAML frontmatter (`name`, `description`, `metadata`) and a comprehensive quick reference
-- `references/` — Modular deep-dive files linked from SKILL.md for detailed syntax, edge cases, and workflows
+- Supporting Markdown — Optional detailed syntax, edge cases, workflows, or templates in `references/`, `reference/`, or files alongside `SKILL.md`
 - `scripts/` — (optional) Helper scripts for validation, inventory, or installation
 - `agents/` — (optional) Agent-specific configurations (e.g., OpenAI agent YAML)
 
@@ -32,11 +32,16 @@ The `description` frontmatter field is the **activation trigger** — it lists k
 | Skill              | Topic                                                                                                                                                            |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `drizzle-migration-conflict` | Drizzle Kit migration conflict diagnosis and team workflow guidance - inspect `_journal.json`, snapshots, migration folders, merge conflicts, `drizzle-kit check`, and CI prevention |
+| `git-stack` | Git workflows — commits, pushes, merge or rebase conflicts, worktree creation and reuse, scoped changes, and reusable validation results |
+| `grill` | Decision interviews — examine plans, ideas, and designs through successive questions, map decision dependencies, and clarify assumptions until consensus |
 | `hugo-to-markdown` | Hugo documentation and content conversion — inspect local Hugo config, shortcodes, render hooks, front matter, and mounted content roots to produce safe standard Markdown exports |
 | `postgresql-cli` | PostgreSQL interactive terminal ([psql](https://www.postgresql.org/docs/current/app-psql.html)) — meta-commands, CLI options, formatting, import/export, scripting |
+| `prd` | Product requirements — turn ideas and clarified needs into a PRD with users, goals, scope, behavior, and acceptance criteria before implementation |
 | `pre-release-review` | Production pre-release code review and deploy-readiness audit — inspect PRs or git ranges for missing migrations, configs, caches, queues, assets, secrets, service order, and rollout risks |
 | `rclone-cli`     | [Rclone](https://rclone.org/) cloud storage manager — sync, copy, mount, serve, bisync, crypt, filtering, 70+ providers                                            |
 | `redis-cli`      | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface — data querying, key scanning, server monitoring, latency analysis, vector search, ACL management, cluster management, scripting |
+| `to-spec` | Technical specifications — PRD content by default, with explicitly supplied or selected ADRs, interviews, and Q&A documents supported; source traceability, implementation contracts, and verification criteria |
+| `to-task` | Task decomposition — define verifiable work items, priorities, dependencies, and acceptance criteria; save locally or to a user-selected task system without executing or scheduling the work |
 
 ## Development Commands
 
