@@ -20,6 +20,7 @@ Skill 是一个包含 `SKILL.md` 入口文件和可选辅助资源的目录，�
 
 | Skill                            | 说明                                                                                                                                                     |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [database-design][database-design] | 关系型数据库设计与评审 —— 面向 MySQL、PostgreSQL 等数据库，覆盖模型、字段、主键、约束、索引、事务规则、架构及兼容的 DDL/迁移 |
 | [drizzle-migration-conflict][drizzle-migration-conflict] | Drizzle Kit 迁移冲突诊断与团队协作工作流 —— 检查 `_journal.json`、snapshot、迁移目录、merge conflict、`drizzle-kit check` 与 CI 预防方案 |
 | [git-stack][git-stack] | Git 工作流 —— 提交与推送更改、处理合并或变基冲突、创建或复用 worktree，明确操作范围并复用有效验证结果 |
 | [grill][grill] | 决策访谈 —— 通过逐轮追问检验计划、想法或设计，用设计树梳理决策依赖，澄清假设并达成共识 |
@@ -93,6 +94,9 @@ agent-skills/
 ├── docs/
 │   └── skill-authoring.md   # 技能编写与维护规范
 ├── skills/                  # Skill 目录
+│   ├── database-design/     # 关系型模型、结构评审与迁移
+│   │   ├── SKILL.md         # 英文入口：工作流程、参考导航与验证
+│   │   └── references/      # 建模、ID、数据库方言、索引、事务与架构
 │   ├── drizzle-migration-conflict/ # Drizzle Kit 迁移冲突处理与预防
 │   │   ├── SKILL.md         # Skill 入口文件
 │   │   ├── references/      # 冲突处理、CI 策略、报告模板和来源链接
@@ -142,6 +146,7 @@ agent-skills/
 
 [Apache License 2.0](LICENSE)
 
+[database-design]: skills/database-design/SKILL.md
 [drizzle-migration-conflict]: skills/drizzle-migration-conflict/SKILL.md
 [git-stack]: skills/git-stack/SKILL.md
 [grill]: skills/grill/SKILL.md

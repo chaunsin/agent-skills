@@ -26,6 +26,7 @@ Before creating, modifying, or reviewing a skill, read and follow [Skill Authori
 
 | Skill              | Topic                                                                                                                                                            |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `database-design` | Relational database modeling and schema review — keys, constraints, indexes, transactions, architecture, database-specific DDL, and incremental migrations |
 | `drizzle-migration-conflict` | Drizzle Kit migration conflict diagnosis and team workflow guidance - inspect `_journal.json`, snapshots, migration folders, merge conflicts, `drizzle-kit check`, and CI prevention |
 | `git-stack` | Git workflows — commits, pushes, merge or rebase conflicts, worktree creation and reuse, scoped changes, and reusable validation results |
 | `grill` | Decision interviews — examine plans, ideas, and designs through successive questions, map decision dependencies, and clarify assumptions until consensus |
