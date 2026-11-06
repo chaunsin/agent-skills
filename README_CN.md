@@ -87,61 +87,6 @@ cp -r skills/<skill-name> ~/.claude/skills/
 
 新增或修改技能前，请遵循[技能编写与维护规范](docs/skill-authoring.md)（英文）。规范涵盖精简且完整的内容、清晰排版、渐进披露、修改依据、通用性、安全问题判断及验证要求。
 
-## 仓库结构
-
-```text
-agent-skills/
-├── docs/
-│   └── skill-authoring.md   # 技能编写与维护规范
-├── skills/                  # Skill 目录
-│   ├── database-design/     # 关系型模型、结构评审与迁移
-│   │   ├── SKILL.md         # 中文指令：工作流程、参考导航与验证
-│   │   └── references/      # 建模、ID、数据库方言、索引、事务与架构
-│   ├── drizzle-migration-conflict/ # Drizzle Kit 迁移冲突处理与预防
-│   │   ├── SKILL.md         # Skill 入口文件
-│   │   ├── references/      # 冲突处理、CI 策略、报告模板和来源链接
-│   │   └── scripts/         # 只读迁移结构检查脚本
-│   ├── git-stack/           # Git 提交、推送、冲突处理与工作树
-│   │   ├── SKILL.md         # 技能入口文件
-│   │   ├── commit.md        # 提交与推送流程
-│   │   ├── conflict.md      # 合并与变基冲突处理
-│   │   ├── validation.md    # 验证复用与失败分类
-│   │   └── worktree.md      # 工作树创建与复用
-│   ├── grill/               # 决策访谈与设计树
-│   │   └── SKILL.md         # 技能入口文件
-│   ├── hugo-to-markdown/    # Hugo 文档和内容转标准 Markdown
-│   │   ├── SKILL.md         # Skill 入口文件
-│   │   ├── agents/          # 智能体配置
-│   │   ├── references/      # Hugo 转换规则
-│   │   └── scripts/         # 规则盘点和校验脚本
-│   ├── postgresql-cli/      # PostgreSQL 交互式终端 (psql)
-│   │   ├── SKILL.md         # Skill 入口文件
-│   │   └── references/      # 详细参考文件
-│   ├── prd/                 # 产品需求生成
-│   │   ├── SKILL.md         # 技能入口文件
-│   │   └── reference/       # PRD 文档模板
-│   ├── pre-release-review/  # 生产发布就绪度审查
-│   │   ├── SKILL.md         # Skill 入口文件
-│   │   └── references/      # 检查清单与报告模板
-│   ├── rclone-cli/          # Rclone 云存储管理器
-│   │   ├── SKILL.md         # Skill 入口文件
-│   │   ├── references/      # 详细参考文件
-│   │   └── scripts/         # 辅助脚本
-│   ├── redis-cli/           # Redis 命令行界面
-│   │   ├── SKILL.md         # Skill 入口文件
-│   │   └── references/      # 详细参考文件
-│   ├── to-spec/             # 根据 PRD 或明确指定的材料生成技术规格
-│   │   ├── SKILL.md         # 中文技能入口文件
-│   │   └── reference/       # SPEC 文档模板
-│   └── to-task/             # 任务拆解与计划维护
-│       ├── SKILL.md         # 技能入口文件
-│       ├── references/      # 数据格式与对应的 JSON、Markdown 示例
-│       └── scripts/         # 只读任务计划校验脚本
-├── CLAUDE.md                # Claude Code 工作区指令
-├── LICENSE                  # Apache 2.0 许可证
-└── README.md                # 英文说明文件
-```
-
 ## 许可证
 
 [Apache License 2.0](LICENSE)
