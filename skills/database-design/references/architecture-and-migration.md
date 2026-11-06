@@ -1,32 +1,85 @@
-# Architecture and Schema Migration
+# 数据库架构扩展与结构迁移
 
-Read for service boundaries, tenancy, partitioning, sharding, replication, or production migrations. Justify architectural expansion with business, scale, or reliability needs.
+本文件仅在涉及服务边界、多租户、分区、分库分表、集群或生产结构迁移时读取。所有架构扩展必须有明确业务需求、规模或可靠性依据。
 
-## Service boundaries and tenants
+## 1. 服务与数据边界
 
-A monolith may share an instance, but assign table ownership and write responsibility by domain. Microservices should own their data; other services should use APIs, events, or controlled synchronization rather than depend on internal tables or share writes. Evaluate outbox, saga, compensation, and eventual consistency for cross-service operations; do not assume cross-service joins or a single transaction.
+- 单体系统可以共享数据库实例，但应按领域明确表归属和写入责任。
+- 微服务应明确数据所有权；其他服务不应直接依赖某服务的内部表结构或共同写表。
+- 跨服务访问优先使用 API、事件或受控的数据同步机制。
+- 跨服务一致性按场景评估 Outbox、Saga、补偿和最终一致性，不要假设跨服务 JOIN 或单库事务可用。
 
-Choose shared tables, separate schemas, or separate databases/clusters according to tenant scale, isolation, backup, and operating costs. For shared tables, identify every tenant-scoped table and the source of `tenant_id`; scope all reads, updates, and deletes; enforce tenant-scoped uniqueness; verify joined entities share a tenant; consider tenant indexes and partitions; and define authorization for jobs, administrators, and cross-tenant reporting.
+## 2. 多租户
 
-## Partitioning and sharding
+按租户规模、隔离等级和运营成本选择：
 
-First consider modeling, indexes, query optimization, archiving, and cleanup. Consider native RANGE/LIST/HASH partitioning, horizontal tables, or separate databases only for a demonstrated maintenance, capacity, or throughput bottleneck.
+- 共享数据库、共享表：通过 `tenant_id` 隔离，适合结构一致且租户较多的场景。
+- 共享数据库、独立 Schema：需要更强逻辑隔离时评估。
+- 独立数据库或独立集群：适合高隔离、独立备份恢复或专属资源要求。
 
-Define partition or shard keys against query patterns, routing and rebalancing, global IDs, cross-shard queries and pagination, transactions and compensation, migration, backup, recovery, and operating costs. A primary key identifies a record; a shard key routes it. A Snowflake ID does not automatically yield balanced or query-appropriate routing. Partitioning is not sharding and partition pruning does not make every query faster; check uniqueness limitations, maintenance, routing, and actual plans.
+共享表必须：
 
-## Replication and availability
+1. 明确所有需要租户隔离的表及租户字段来源。
+2. 所有读取、更新和删除都执行租户范围约束，防止 IDOR/跨租户访问。
+3. 设计租户范围的唯一约束（例如 `(tenant_id, business_key)`）。
+4. 关联查询验证实体属于同一租户。
+5. 将 `tenant_id` 纳入适当的索引和分区评估。
+6. 明确后台任务、管理员操作和跨租户汇总的授权边界。
 
-Define writers, read replicas, replication mode and lag. Route read-after-write, transactional, and strongly consistent reads to a node with the required guarantee. Assess failover, split-brain protection, detection, data-loss window, recovery, and agreed RPO and RTO. High availability is not backup: maintain independent backups and exercise restoration. Multi-writer systems require conflict detection, merging, and uniqueness handling.
+## 3. 分区、分表和分库
 
-## Online migrations
+优先评估合理建模、索引、查询优化、归档和数据清理。只有存在明确的维护、容量或吞吐瓶颈时，才考虑：
 
-Inspect existing data, callers, indexes, constraints, transactions, and deployment before changing production. Assess field removal, tighter constraints, and changed semantics before execution. For large tables or multiple application versions, evaluate expand and contract:
+- 分区：RANGE、LIST、HASH 等数据库原生分区策略。
+- 水平分表：按分片键将同一逻辑表的数据分布到多个物理表。
+- 分库：进一步拆分数据存储和故障域。
 
-1. Expand with new fields, tables, or indexes while the old path works.
-2. Deploy compatibility with both structures.
-3. Backfill in retryable batches.
-4. Check counts, uniqueness, relationships, precision, and business invariants.
-5. Switch reads and writes and monitor.
-6. Remove old structures only after old versions and the rollback window have passed.
+实施前必须定义：
 
-Document locks, duration, failure handling, rollback or forward repair, backups, and monitoring. Validate counts and shard distribution, keys and references, business uniqueness, NULL/default/enum mappings, amounts and units, time zones and precision, application compatibility, rerun idempotency, failure recovery, and backup restoration.
+- 分区键/分片键及其与查询模式的匹配关系。
+- 分片算法、路由目录、扩容和重平衡方案。
+- 全局唯一 ID 生成策略。
+- 跨分片查询、聚合、排序和分页方案。
+- 跨分片事务、一致性和补偿方案。
+- 数据迁移、备份、恢复及运维成本。
+
+**主键与分片键是不同概念。** 主键标识记录，分片键决定数据路由。Snowflake 等全局 ID 不会自动提供均匀或符合业务查询模式的分片路由；不能只凭主键有序就选它作为分片键。
+
+分区不等于分表，分表不等于分库；分区裁剪也不保证所有查询变快。必须检查唯一约束限制、分区维护、查询路由和真实执行计划。
+
+## 4. 复制、读写分离和高可用
+
+- 明确主写节点、只读节点、复制模式及复制延迟。
+- 写后读、事务内读及强一致性要求应按需路由到主节点或具备相应一致性保证的节点。
+- 评估主从切换、脑裂防护、故障检测、数据丢失窗口及恢复流程。
+- 备份与高可用不是同一能力；必须有独立备份和恢复演练。
+- 对 RPO（可接受数据丢失窗口）和 RTO（恢复时间目标）进行明确约定。
+- 多主写入需处理冲突检测、数据合并和唯一性，不能只为提升写入吞吐而默认采用。
+
+## 5. 在线结构迁移
+
+生产结构变更前，检查现有数据、调用方、索引/约束、事务和部署方式。不得未经评估直接删除字段、收紧约束或修改字段含义。
+
+对于大表或需要兼容多版本应用的变更，评估 Expand and Contract：
+
+1. 扩展：新增字段/表/索引，先保持旧路径可用。
+2. 兼容：应用版本同时兼容新旧结构。
+3. 回填：分批、可重试地迁移历史数据。
+4. 校验：对数量、唯一性、关联、精度和业务不变量进行核对。
+5. 切换：切换读写路径并监控。
+6. 收缩：确认旧版本退出且可回滚窗口结束后，再移除旧结构。
+
+每项变更必须说明锁影响、执行时间、失败处理、回滚或前向修复策略、备份要求和观察指标。
+
+## 6. 迁移验证
+
+至少验证：
+
+- 记录数及分区/分片分布。
+- 主键唯一性及引用完整性。
+- 业务唯一约束。
+- NULL、默认值和枚举映射。
+- 金额、数量、精度和单位。
+- 时间时区及精度。
+- 应用新旧版本兼容性。
+- 重跑幂等性、失败恢复和备份恢复能力。

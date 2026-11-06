@@ -95,7 +95,7 @@ agent-skills/
 │   └── skill-authoring.md   # 技能编写与维护规范
 ├── skills/                  # Skill 目录
 │   ├── database-design/     # 关系型模型、结构评审与迁移
-│   │   ├── SKILL.md         # 英文入口：工作流程、参考导航与验证
+│   │   ├── SKILL.md         # 中文指令：工作流程、参考导航与验证
 │   │   └── references/      # 建模、ID、数据库方言、索引、事务与架构
 │   ├── drizzle-migration-conflict/ # Drizzle Kit 迁移冲突处理与预防
 │   │   ├── SKILL.md         # Skill 入口文件

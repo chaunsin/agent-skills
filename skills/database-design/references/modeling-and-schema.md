@@ -1,28 +1,110 @@
-# Modeling and Schema
+# 关系建模与表结构规范
 
-Identify entities, responsibilities, ownership, and lifecycles first. Use third normal form as a baseline; denormalize only for a demonstrated need such as historical snapshots or measured reporting bottlenecks, documenting the authoritative source, synchronization, inconsistency window, and repair. Do not mechanically split tables or duplicate facts to avoid joins. Separate differing responsibilities, lifecycles, or permissions; justify hot/cold separation.
+本文件用于业务实体、逻辑模型、表结构、字段、关系和数据完整性设计。仅在涉及这些主题时读取。
 
-## Names and fields
+## 1. 领域与范式
 
-Use consistent lowercase ASCII `snake_case`, avoiding reserved words, ambiguous abbreviations, and meaningless core names. Use domain prefixes where useful; do not repeat the table name in every field. Prefer a project's existing conventions.
+1. 先识别业务实体、实体职责、数据归属和生命周期，再设计表。
+2. 默认以第三范式（3NF）为逻辑设计基线，确保事实只在合理位置维护，避免更新异常。
+3. 只有当历史快照、报表预计算、经验证的查询瓶颈等场景确有必要时才反规范化；必须记录权威来源、写入/同步机制、允许的不一致窗口和重建/修复方法。
+4. 不得为了减少 JOIN 而无依据地冗余字段，也不得为了追求范式而机械拆表。
+5. 不同职责、生命周期或权限边界的数据应分别建模。冷热分离或动静分离必须存在可说明的访问、规模或运维收益。
 
-Entity tables commonly have an `id` and `created_at`; use `updated_at` for mutable entities requiring change tracking, `deleted_at` only for required soft deletion, and `version` only for optimistic locking. Association tables can use composite keys; immutable events and ledgers generally do not need `updated_at`. Arrange fields for readability, not presumed performance.
+## 2. 命名
 
-Select integer ranges and text lengths from business bounds. Use `CHAR` only for truly fixed-length values; use `DECIMAL`/`NUMERIC` or integer minor units for money, with explicit currency, precision, and units. Use semantic booleans and native date/time types. JSON suits flexible attributes, not core relationships or frequently filtered fields. Match related types, signedness, precision, character sets, and collations.
+- 表、字段、约束和索引标识符默认使用小写 `snake_case`。
+- 仅使用 ASCII 字母、数字和下划线；避免横线、空格、中文、其他特殊字符及数据库保留字。
+- 同一业务概念全项目采用同一名称，例如统一使用 `user_id`，不要混用 `uid`、`userId`。
+- 表名可使用领域前缀，例如 `lottery`、`lottery_prize`、`lottery_user_record`。
+- 字段在表上下文中表达含义即可，例如 `lottery.status`，不重复命名为 `lottery_status`。
+- 名称应简短明确，不要过度缩写，也不要用缺乏语义的 `data`、`value`、`info` 作为核心业务字段名。
 
-Distinguish dates, instants, and durations. Use consistent UTC semantics for instants and explicit precision and conversion rules; do not rely on implicit server or session time zones. Define whether the application or database maintains timestamps and check ORM behavior. Calendar rules such as 09:00 local time may also require an IANA time-zone identifier.
+## 3. 表职责与标准字段
 
-Prefer `NOT NULL` where business semantics support it; define what NULL means and distinguish it from zero, empty strings, and unset values. Defaults must reflect business rules. Table and column comments should explain meaning, units, ranges, enums, and special conventions.
+常规业务实体表通常具有：
 
-## Relationships and integrity
+| 字段 | 默认职责 | 规则 |
+| --- | --- | --- |
+| `id` | 主键 | ID 选型遵循 `id-strategy.md` |
+| `created_at` | 创建时间 | 记录实体创建时间 |
+| `updated_at` | 最后修改时间 | 实体可变且需要追踪修改时使用 |
+| `deleted_at` | 软删除时间 | 仅在业务需要保留删除记录时使用 |
+| `version` | 乐观锁版本 | 仅在需要检测并发覆盖时使用 |
 
-- One-to-one: use a shared primary key or unique reference; split only for meaningful lifecycle, access, security, update, or responsibility differences.
-- One-to-many: put the reference on the many side; assess foreign keys and indexes.
-- Many-to-many: use a join table with a composite key or an independent key plus a composite unique constraint; model independent attributes and lifecycle explicitly.
-- Polymorphism: consider a common identity table plus typed extensions, a `type + id` reference with transactional validation, deletion protection and reconciliation, or separate association tables. A normal foreign key cannot enforce `type + id` across target tables. Do not choose polymorphism merely to reduce NULLs.
+例外：纯关联表可以使用联合主键；不可变事件/流水表通常不需要 `updated_at`；日志、归档和特殊用途表按生命周期决定，不机械添加全部标准字段。
 
-Use primary keys, uniqueness, NOT NULL, and supported CHECK constraints for invariants. Prefer physical foreign keys within a shared integrity boundary; when sharding, service boundaries, or proven operational constraints prevent them, define logical validation and repair. Choose `RESTRICT`, `NO ACTION`, `CASCADE`, or `SET NULL` by business semantics. For soft deletion define filtering, uniqueness, restoration, and eventual physical cleanup.
+字段排列以可读性为目标，通常先放主键和核心业务标识，再放业务属性、关联字段、状态/类型、扩展属性，最后放审计及控制字段。字段顺序不是性能优化手段。
 
-Classify rows in one table only when structure, lifecycle, and behavior align. Define stable finite status codes centrally; consider dictionary tables for dynamic values. Use bitmasks only for limited independent flags with documented bits and compatibility; use association tables for dynamic, queryable, or attributed selections.
+## 4. 字段类型与长度
 
-Review missing entities, duplicated facts, cardinality, uniqueness scope, polymorphic integrity, NULL/default semantics, and lifecycle boundaries.
+- 整数按实际范围选择 `SMALLINT`、`INT` 或 `BIGINT`，不要所有数字一律使用 `BIGINT`。
+- 可变长度文本通常使用 `VARCHAR`；大段文本按场景使用 `TEXT`；不要所有字符串一律定义为 `VARCHAR(255)`。
+- 固定长度且语义确实固定时才考虑 `CHAR`。
+- 金额使用 `DECIMAL`/`NUMERIC`，或明确最小计量单位的整数；不得使用浮点类型做精确账务计算。
+- 需要明确金额精度、小数位、币种和单位。
+- 开关使用 `BOOLEAN` 或目标数据库等价类型；字段名应表达语义，如 `enabled`、`is_default`。
+- `DATE` 表示日期；时间点使用语义正确的时间类型；持续时间不应伪装成时间点。
+- JSON 适用于结构灵活且不需要关系约束的扩展属性，不得用 JSON 替代应规范化建模的核心关系或高频过滤字段。
+- 字段类型和关联字段必须兼容，长度、精度、有符号属性及字符集/排序规则也应匹配。
+
+## 5. 时间字段与时区
+
+- 日期、真实时间点和持续时间是不同语义，必须选择对应类型，不得用字符串保存可由原生时间类型准确表达的值。
+- 表示真实时间点时，项目应统一采用 UTC 时间语义；不要依赖数据库服务器或连接会话的隐式时区。
+- 统一时间精度（秒、毫秒或微秒），并明确应用、数据库和消息中的精度转换规则。
+- `created_at`、`updated_at` 的维护责任由数据库或应用承担均可，但必须统一并确认 ORM/驱动行为。
+- 对“当地时间每天 09:00”一类日历/定时规则，除时间点外，按需保存 IANA 时区标识；只保存 UTC 时间点不能表达未来当地时间的时区规则。
+- MySQL 与 PostgreSQL 的时间类型及转换行为不同，物理选型分别遵循 `mysql.md` 和 `postgresql.md`。
+
+## 6. NULL、默认值和注释
+
+1. 默认优先 `NOT NULL`，但必须以业务语义为准。
+2. NULL 可以表示未知、尚未提供、不适用或尚未发生；必须明确其含义。
+3. 不得以 `0`、空字符串或占位值替代有实际含义的 NULL。
+4. 必须区分 NULL、零值、空字符串和“未配置”等语义。
+5. 默认值必须是合理业务默认值，不能只是为了省略写入字段而随意设置。
+6. 每张业务表必须有表注释，每个字段必须有字段注释。注释应解释业务含义、单位、取值范围、枚举值或特殊使用约定，不能只写“状态”“时间”“用户 ID”。
+
+## 7. 实体关系
+
+### 一对一
+
+可采用共享主键或唯一关联字段。仅当数据生命周期、访问权限、安全等级、更新频率或实体职责确有差异时，才拆为扩展表。通过主键或唯一约束保证基数。
+
+### 一对多
+
+通常由多的一方保存关联 ID，如 `user_id`、`order_id`、`lottery_id`。按一致性边界评估物理外键，并为高频关联查询评估索引。
+
+### 多对多
+
+使用中间表。可采用两端字段组成的联合主键，或独立主键加两端字段的联合唯一约束。中间表若有独立属性、状态或生命周期，应按关联实体建模。
+
+### 多态关联
+
+当一个关联字段需要指向多张不同目标表时，选择前必须评估引用完整性：
+
+1. **统一主体表 + 类型扩展表**：适用于不同类型具有共同身份、生命周期或管理行为的实体。关联表只引用统一主体；仍需保证主体类型与扩展表记录一致。
+2. **`type + id` 多态关联**：扩展简单，但普通外键无法跨多张目标表保证引用完整性。只有在接受该权衡且具备事务校验、删除保护、异常修复和巡检机制时使用。
+3. **类型专属关联表**：结构明确、约束能力强，但新增类型需要新增关联结构。
+
+不得仅为减少 NULL 字段而选择多态关联。
+
+## 8. 约束与删除
+
+- 常规实体应有明确主键；业务唯一性尽可能由 UNIQUE 约束保证。
+- 必须存在的属性使用 `NOT NULL`。
+- 可明确表达的取值范围或字段组合限制，评估使用 CHECK 约束；确认目标数据库版本的实际支持行为。
+- 同一数据库管理边界内的强关联优先评估物理外键。跨库/跨服务、分片限制或已验证的运维原因可以不建物理外键，但必须保留逻辑关系并定义应用校验、事务、补偿或巡检机制。
+- 外键删除/更新行为按业务语义选择 `RESTRICT`、`NO ACTION`、`CASCADE`、`SET NULL` 等，不得全部默认级联。
+- 软删除使用 `deleted_at` 表达删除时间，并设计默认查询过滤、唯一性、恢复和最终物理清理策略。软删除不等同于物理删除。
+
+## 9. 分类、状态和多选
+
+- 多种类型只有在核心结构、生命周期和处理逻辑基本一致时，才适合在同一表中通过 `type` 分类。
+- 稳定且有限的状态值可使用整数或字符串编码，并维护统一取值定义；动态管理的字典评估独立字典表。
+- 固定、数量有限、相互独立的开关可以用 BITMASK；必须维护每个位的含义和版本兼容规则。
+- 动态增加、需要单独查询/统计/关联或包含选项属性的多选值，优先使用中间表。
+
+## 10. 逻辑模型检查
+
+设计完成后，检查：实体是否遗漏；实体边界是否清晰；关系基数是否正确；是否存在重复事实；唯一性范围是否准确；多态关联是否破坏引用完整性；NULL/默认值是否混淆；表职责及生命周期是否清楚。

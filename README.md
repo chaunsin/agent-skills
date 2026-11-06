@@ -95,7 +95,7 @@ agent-skills/
 │   └── skill-authoring.md   # Skill authoring and maintenance rules
 ├── skills/                  # Skill directories
 │   ├── database-design/     # Relational models, schema review, and migrations
-│   │   ├── SKILL.md         # Entry point: workflow, references, and validation
+│   │   ├── SKILL.md         # Chinese instructions: workflow, references, and validation
 │   │   └── references/      # Modeling, IDs, dialects, indexes, transactions, architecture
 │   ├── drizzle-migration-conflict/ # Drizzle Kit migration conflict repair and prevention
 │   │   ├── SKILL.md         # Skill entry point

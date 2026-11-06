@@ -1,15 +1,59 @@
-# Indexing and Query Design
+# 索引与查询设计
 
-Design indexes for real or explicitly expected queries, including filters, joins, ordering, grouping, ranges, pagination, and uniqueness. Balance reads against storage and write maintenance; do not impose a fixed index count. Review redundant and low-value indexes, data distribution and selectivity, and whether foreign-key columns need indexes in the target database.
+本文件用于索引规划、SQL 查询性能分析和执行计划审查。
 
-Use the project's naming convention; otherwise consider `pk_<table>`, `uk_<table>_<columns>`, `idx_<table>_<columns>`, `fk_<table>_<ref>`, and `chk_<table>_<purpose>` within identifier limits. Do not rebuild equivalent objects merely to rename them.
+## 1. 索引设计原则
 
-For composite B-tree indexes, equality columns before range columns can be a starting point, with ordering and covering needs considered, but validate against actual plans, distribution, and database version. Leading-column rules and optimizations such as PostgreSQL skip scan vary. Avoid speculative wide indexes and every possible predicate permutation.
+1. 索引必须服务于真实或明确预期的查询模式，不按字段清单机械创建。
+2. 评估 WHERE、JOIN、ORDER BY、GROUP BY、范围过滤、分页及唯一性要求。
+3. 索引提高读取效率的同时，会增加存储成本，并放大 INSERT、UPDATE、DELETE 的维护成本。
+4. 不设置每张表固定索引数量上限；检查重复、冗余、低收益及长期无使用价值的索引。
+5. 低选择性字段是否值得单列索引，必须结合查询频率、数据分布、复合索引及优化器判断。
+6. 外键字段并非所有数据库都会自动创建索引，应检查实际查询和约束负载后决定。
 
-Specify the scope of business uniqueness and database-specific NULL behavior. For soft deletion, decide whether deleted rows release unique values; assess partial unique indexes or suitable generated-column strategies. Appending `deleted_at` to a unique index does not automatically enforce the desired rule. Use constraints for concurrent uniqueness rather than check-then-insert.
+## 2. 命名
 
-Use MySQL `EXPLAIN` or PostgreSQL `EXPLAIN`; where safe, use `EXPLAIN ANALYZE` or `EXPLAIN (ANALYZE, BUFFERS)`. Compare actual and estimated rows, scans, joins, sorts, temporary structures, row lookups, and buffer activity. ANALYZE executes the statement, so use a safe, rollback-capable environment for writes or side effects.
+项目统一采用简短、可读且不超过目标数据库标识符长度限制的名称。可采用：
 
-Choose `IN`, `EXISTS`, and `JOIN` by semantics, NULL behavior, data, indexes, and plans, not slogans. A NULL in `NOT IN` can yield surprising results; consider `NOT EXISTS`. Avoid unnecessary `SELECT *`, N+1 queries, implicit conversions, functions on indexed columns, and needless joins. For deep pagination evaluate keyset pagination with a unique tie-breaker. Size batches with parameter limits, transactions, locks, and retries in mind.
+- `pk_<table>`：主键约束。
+- `uk_<table>_<columns>`：唯一约束或唯一索引。
+- `idx_<table>_<columns>`：普通索引。
+- `fk_<table>_<ref>`：外键约束。
+- `chk_<table>_<purpose>`：检查约束。
 
-For important indexes explain the query, column order, expected benefit, and write cost. Without measured plans, label performance claims as design estimates.
+若项目现有规范不同，优先沿用项目规范；不要因命名规则不同而重建功能等价对象。
+
+## 3. 联合索引
+
+- 根据真实 SQL 设计列顺序。
+- 对 B-tree，常见思路是将稳定的等值条件列放在范围条件列之前，再结合排序列；这只是起点，必须以目标数据库的优化器、数据分布和执行计划验证。
+- 考虑联合索引是否能覆盖常用查询、排序和 LIMIT 场景；不要盲目增加宽索引。
+- 注意数据库的前导列规则及版本差异。PostgreSQL 的 skip scan 等优化可能改变部分查询行为，不能把简单口诀当作绝对规则。
+- 不要为每种可能的 WHERE 字段排列都建立索引。
+
+## 4. 唯一性、NULL 与软删除
+
+- 业务唯一性应尽量通过 UNIQUE 约束保证。
+- 明确唯一性范围：全局、租户内、父实体内或时间窗口内。
+- 了解目标数据库对 UNIQUE 中 NULL 值的处理差异。
+- 软删除场景应明确“已删除记录是否释放唯一值”。可评估部分唯一索引（如 PostgreSQL）或生成列/组合键等数据库适配方案；不要直接把 `deleted_at` 拼进联合唯一索引就假设语义正确。
+- 唯一约束应与业务规则和并发写入共同设计，不能只靠“先查再插入”。
+
+## 5. 执行计划与 SQL
+
+- MySQL：使用 `EXPLAIN`，必要时在安全条件下使用 `EXPLAIN ANALYZE`。
+- PostgreSQL：使用 `EXPLAIN`，必要时使用 `EXPLAIN (ANALYZE, BUFFERS)`。
+- 对比实际/估算行数、扫描方式、连接算法、排序、临时结构、回表和缓冲区读写。
+- `EXPLAIN ANALYZE` 会执行语句；对 UPDATE/DELETE 或有副作用的语句，必须使用可回滚测试环境或其他安全措施。
+
+## 6. 常见查询陷阱
+
+- `IN`、`EXISTS`、`JOIN` 不存在跨场景绝对优劣，应依据语义、NULL 行为、数据量、索引和执行计划选择。
+- `NOT IN` 子查询若可能返回 NULL，结果可能与直觉不符；需要时评估 `NOT EXISTS`。
+- 避免不必要的 `SELECT *`、N+1 查询、隐式类型转换、对索引列套函数以及不合理的多表 JOIN。
+- 大偏移量分页应评估 Keyset Pagination（基于稳定排序键的游标分页）。排序键需唯一或有唯一后备字段，否则可能漏行/重复。
+- 批量查询和批量写入应考虑批次大小、参数上限、事务大小、锁持有时间及失败重试。
+
+## 7. 交付要求
+
+每个重要索引应说明：服务哪个查询、列顺序为何这样安排、预期收益和写入成本。若没有实际执行计划，应明确这是基于查询模式的设计推断，而非已经验证的性能结论。

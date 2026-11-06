@@ -1,23 +1,79 @@
-# Transactions, Concurrency, and Financial Data
+# 事务、并发与金融资产数据
 
-Define atomic transaction boundaries, isolation, read/write order, commit, rollback, and retries. Keep transactions short and avoid uncontrolled external calls or long IO inside them. Sequential application SQL is not automatically atomic. For cross-service or cross-database consistency, assess outbox, saga, compensation, or eventual consistency.
+本文件用于涉及并发写入、余额、库存、积分、资产、交易或账务记录的任务。
 
-## Concurrency and UPSERT
+## 1. 事务边界
 
-Choose controls for the conflict rate and business invariant: narrow lock scope and duration; optimistic version or old-value checks with affected-row verification; pessimistic locking where serialization is needed; atomic conditional updates such as `UPDATE ... SET stock = stock - 1 WHERE id = ? AND stock > 0`; unique constraints; and idempotency keys backed by uniqueness.
+1. 多个写操作需要原子性时，应定义清晰事务边界。
+2. 事务应尽可能短，避免在事务内执行长耗时 IO/HTTP/RPC、人工等待或不可控外部调用。
+3. 明确隔离级别、读写顺序、提交点、异常回滚和重试边界。
+4. 不能把应用层多条 SQL 的顺序执行误认为天然具备原子性。
+5. 跨服务或跨数据库无法使用单一 ACID 事务时，按业务一致性要求评估 Outbox、Saga、补偿或最终一致性方案。
 
-For create-or-update by a business key, assess native atomic UPSERT instead of check-then-insert. Define the conflict key and uniqueness constraint, and update only explicitly permitted fields; do not blindly overwrite states, amounts, creation times, or authoritative data. Use database expressions for atomic increments. Define timeouts, deadlock handling, bounded retries, backoff, and idempotency. Deduplicate batch conflict keys and define merge semantics. UPSERT does not replace transactions, cross-row invariants, conditional state transitions, or concurrency testing; performance depends on workload.
+## 2. 并发控制
 
-MySQL `INSERT ... ON DUPLICATE KEY UPDATE` can react to any primary or unique key, so assess multiple unique keys and their potentially different matching rows. Affected-row counts vary by insert, update, unchanged values, and client options. PostgreSQL `INSERT ... ON CONFLICT (key) DO UPDATE` needs an explicit conflict target; duplicate input keys affecting the same row can cause a cardinality violation. Verify atomicity, locking, return values, and isolation for other databases rather than assuming similar syntax has identical semantics.
+按冲突概率、事务时长和业务语义选择：
 
-Use triggers sparingly for database-wide integrity or audit rules, not hidden complex workflows or external calls. Document timing, tables, transaction behavior, recursion, deployment, rollback, and tests. Choose one consistent owner for `updated_at`.
+- 缩小范围：应避免或减少库锁、页锁、表锁、间隙锁、独占锁、读写锁，等临界冲突。
+- 乐观锁：通过 `version` 或旧值条件更新检测并发覆盖；必须检查受影响行数。
+- 悲观锁：在确有竞争且需要串行化特定记录操作时使用；控制锁范围和持有时间。
+- 原子条件更新：例如 `UPDATE ... SET stock = stock - 1 WHERE id = ? AND stock > 0`，并根据受影响行数判断是否成功。
+- 原子 UPSERT（Insert or Update）：当业务语义是“按明确的业务唯一键创建记录；若已存在则按规则更新”时，优先评估数据库原生 UPSERT，避免应用层先查询再插入/更新产生的竞争窗口。
+- 唯一约束：阻止并发重复创建业务唯一记录，是 UPSERT 冲突判定的基础。
+- 幂等键：防止相同业务请求重复执行；幂等键通常应由唯一约束保障。
 
-## Money, assets, and inventory
+### 2.1 原子 UPSERT 规则
 
-Use `DECIMAL`/`NUMERIC` or integers in defined minor units, never floating point for exact accounting. Define currency, precision, rounding, exchange-rate basis, units, and whether balances, stock, or points may be negative, frozen, reserved, released, or expired.
+1. 必须先定义明确的主键或唯一约束作为冲突目标；不得依赖不确定的冲突键。
+2. 冲突时只更新明确允许覆盖或合并的字段，禁止无条件覆盖状态、金额、创建时间或其他权威业务字段。
+3. 对计数器、累加值等字段，优先使用数据库表达式在单条语句内完成增量，避免“读出旧值—应用计算—写回”的丢失更新。
+4. UPSERT 适合单行或批量的创建/更新、幂等写入、统计汇总等场景；复杂多表业务仍需明确事务边界。
+5. UPSERT 通常可减少应用与数据库之间的往返次数，并缩小应用层竞争窗口，但不保证在所有负载下都更快；应通过执行计划、并发测试和压测验证。
+6. UPSERT 仍可能产生行锁等待、死锁、唯一键冲突或重试需求；必须定义超时、重试退避和幂等策略。
+7. 不得把 UPSERT 当作通用锁、跨行约束或跨表事务的替代品；涉及余额、库存、状态转换时，应使用条件更新、约束和事务共同保证业务不变量。
+8. 批量 UPSERT 前应消除输入集合中相同冲突键的重复行，并明确同一批次内重复数据的合并规则。
 
-Model asset identities, type-specific attributes, accounts, transactions, and orders by responsibility. Prefer append-only immutable ledger entries; correct history through reversals or adjustments. Define unique business transaction IDs, scoped idempotency keys, the authoritative balance source, and balance-to-ledger reconciliation. A version field does not replace a ledger, transaction, idempotency, or reconciliation. If using polymorphic `type + id`, define integrity validation, deletion protection, compensation, and reconciliation.
+数据库适配注意：
 
-Use atomic conditional updates or suitable locks for inventory, issuance, redemption, and points. Enforce business uniqueness, valid state transitions, and timeout compensation for reservation/confirmation/release. Record actor, source, order or request ID, and event time for audit.
+- MySQL：使用 `INSERT ... ON DUPLICATE KEY UPDATE`。该语法可能由表上的任一 PRIMARY KEY/UNIQUE 索引触发冲突；存在多个唯一索引且可能命中不同记录时应谨慎设计，优先确保冲突语义明确。不要把受影响行数简单解释为“成功/失败”，其值可能因插入、更新、未改变及客户端选项而不同。
+- PostgreSQL：使用 `INSERT ... ON CONFLICT (key) DO UPDATE` 或明确约束目标。`ON CONFLICT DO UPDATE` 提供原子 INSERT/UPDATE 结果；同一条语句的输入数据不得包含会命中同一冲突目标的重复键，否则可能触发基数违规。
+- 其他数据库：只有在确认其原子性、冲突目标、锁行为、返回值和隔离级别语义后，才采用等价能力。语法相似不代表并发语义完全相同。
 
-For financial or asset designs, report precision, authoritative data, transaction boundaries, concurrency controls, idempotency, uniqueness, immutable ledger policy, and reconciliation and repair. Mark unknown rules for confirmation.
+不得仅依赖“先 SELECT、应用判断、再 INSERT/UPDATE”处理并发竞争。应考虑死锁检测、重试次数、重试退避以及重试操作的幂等性。
+
+## 2.2 触发器使用
+
+- 触发器适合少量必须在数据库侧统一执行的规则，例如特定审计或跨入口的数据完整性维护。
+- 不要把复杂业务流程、外部调用或隐式业务状态流转藏在触发器中。
+- 使用触发器时必须记录触发时机、作用表、事务行为、递归/级联风险、部署与回滚方式，并纳入测试和迁移验证。
+- `updated_at` 由触发器维护还是由应用维护，应在项目内统一，避免重复更新或更新语义不一致。
+
+## 3. 金额、数量与单位
+
+1. 金额使用 `DECIMAL`/`NUMERIC`，或使用明确币种和最小计量单位的整数。
+2. 禁止使用 FLOAT/DOUBLE 做精确金额存储和记账。
+3. 明确币种、精度、舍入规则、最小计量单位及汇率口径。
+4. 分清金额、数量、单价、余额、估值和积分；不要用通用 `amount` 模糊表达不同量纲。
+5. 库存、积分及资产数量必须明确是否允许负数、是否支持冻结、预占、释放和过期。
+
+## 4. 资产与账务模型
+
+- 资产主体、资产类型扩展属性、资产账户、变动流水和业务订单按职责建模。
+- 关键账务流水优先采用只追加、不可变记录；更正通过冲正/调整记录表达，避免静默改写历史事实。
+- 明确唯一业务流水号、请求幂等键及其作用范围。
+- 明确余额是权威数据还是可重建的汇总/缓存；定义余额与流水核对机制。
+- 资产种类具有共同身份和生命周期时，可评估统一资产主体表加类型扩展表；否则考虑类型专属表或关联表。
+- 多态 `type + id` 会削弱数据库原生外键引用完整性，必须设计事务校验、删除约束、补偿及巡检。
+- version 乐观锁不能代替账务流水、幂等、事务和余额核对。
+
+## 5. 库存、发放与状态机
+
+- 库存扣减、奖品领取、券核销和积分变更应采用原子条件更新或可靠的锁策略。
+- 设计业务唯一键，防止重复领取、重复发放和重复扣减。
+- 明确业务状态及合法状态转换，防止跳过状态或重复执行终态操作。
+- 对“预占—确认—释放”等多阶段流程，明确超时补偿及重试语义。
+- 记录操作主体、业务来源、关联订单/请求 ID 和发生时间，便于审计和追踪。
+
+## 6. 必须说明的设计结果
+
+涉及资金或资产时，交付中必须说明数据精度、权威数据来源、事务边界、并发控制、幂等键、唯一约束、流水不可变策略及异常核对/修复方式。业务规则未知时列为待确认，不得自行假设。

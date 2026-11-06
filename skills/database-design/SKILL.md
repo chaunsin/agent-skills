@@ -1,50 +1,87 @@
 ---
 name: database-design
-description: Design and review relational database models and schemas for MySQL, PostgreSQL, and other relational databases. Use for domain modeling, tables and fields, primary and distributed IDs, constraints, indexes, concurrency, database architecture, DDL, and schema migrations.
+description: 关系型数据库建模与建表设计技能，适用于 MySQL、PostgreSQL 等关系型数据库。用于业务领域建模、表结构与字段设计、主键和分布式 ID 选型、关系约束、索引规划、事务并发、特殊业务数据建模、数据库架构扩展、DDL 生成及结构迁移。新建或修改数据库结构、评审数据模型时使用。
 metadata:
   author: chaunsin
   version: "0.1"
 ---
 
-# Relational Database Design
+# 关系型数据库建模与建表
 
-Turn business requirements into maintainable relational models and physical schemas. Confirm the target database, version, storage engine, conventions, deployment, and migration tools before choosing physical syntax. Mark unknowns and assumptions; do not invent business rules.
+## 一、技能目标与职责
 
-## Principles
+本技能负责将业务需求转化为可维护、数据完整、性能合理的关系型数据库模型和物理表结构。工作范围包括需求分析、领域建模、表与字段设计、主键与约束、索引、事务并发、特殊业务数据、架构扩展、数据库兼容及迁移。
 
-- Model entities, ownership, relationships, states, and lifecycles before writing DDL. Use third normal form as a baseline; justify denormalization and explain its source, synchronization, and consistency.
-- Express integrity with primary keys, uniqueness, NOT NULL, checks, and suitable foreign keys. If physical foreign keys are unavailable, define application validation, transactions, compensation, or reconciliation.
-- Keep distinct responsibilities and lifecycles separate. Use consistent lower-case ASCII `snake_case` names and avoid reserved words.
-- Choose types, precision, nullability, and defaults from business semantics. Never use floating point for exact accounting.
-- Design indexes for actual queries, ordering, joins, distributions, and plans. Avoid speculative redundancy, partitioning, sharding, or caches.
+适用于 MySQL、PostgreSQL 等关系型数据库。逻辑模型尽量保持数据库无关；物理 DDL 必须依据目标数据库产品、版本及存储引擎适配。
 
-## Workflow
+## 二、核心设计原则
 
-1. Identify entities, ownership, relationships, uniqueness, state transitions, access patterns, concurrency, retention, and security requirements.
-2. Build the logical model and identify authoritative data and lifecycle boundaries.
-3. Design tables, fields, keys, constraints, relationships, comments, and defaults. For a single writer, evaluate a numeric identity by default; evaluate distributed IDs only when needed.
-4. Derive indexes from actual or expected SQL. Address soft deletion, optimistic locking, ledgers, tenancy, partitioning, replication, and high availability only where applicable.
-5. Generate DDL for the confirmed database and version; review compatibility, integrity, concurrency, and migration risks.
-6. Validate against the target database when possible. Otherwise report static review only and identify unverified SQL and assumptions.
+1. **业务正确优先**：模型必须准确表达业务实体、关系、状态和生命周期，不得自行编造业务规则。
+2. **默认规范化**：逻辑设计默认以第三范式（3NF）为基线，避免重复事实和不必要冗余；有明确业务或性能依据时才反规范化，并说明数据来源、更新机制及一致性保障。
+3. **数据完整性**：优先使用主键、唯一、非空、检查约束及适当的外键表达可由数据库保证的规则。禁用物理外键时，必须说明应用层校验、事务、补偿或巡检方案。
+4. **职责清晰**：不得为了减少表数量，把职责、生命周期或访问模式明显不同的数据强行合并。
+5. **命名统一**：标识符默认使用小写 `snake_case`，仅使用 ASCII 字母、数字和下划线；避免保留字、模糊命名和同义字段多套命名。
+6. **类型准确**：字段类型、长度、精度、NULL 和默认值必须符合业务语义及数据范围。金额不得使用浮点类型进行精确记账。
+7. **索引由查询驱动**：根据真实查询条件、排序、关联、数据分布和执行计划设计索引，不设置固定索引数量上限。
+8. **避免过度设计**：不得无依据地引入冗余字段、位图、多态关联、分区、分库分表、读写分离或复杂缓存。
+9. **显式处理假设**：关键信息缺失时提出待确认事项；非关键缺失可采用合理假设，但必须标注，不得将假设伪装成已知业务事实。
 
-## References
+## 三、执行流程
 
-Read only the references relevant to the task; combine them when needed:
+按照以下顺序完成设计，不要在未理解业务关系前直接生成复杂 DDL。
 
-| Topic | Reference |
+1. **确认上下文**：识别数据库产品、版本、存储引擎、现有命名规范、部署形态及迁移工具。若未知，明确标注，并避免使用未经确认的专有语法。
+2. **分析需求**：识别业务实体、数据归属、实体关系、唯一性、状态流转、读写模式、并发、数据保留及安全要求。
+3. **建立逻辑模型**：划分领域和实体，明确 1:1、1:N、N:N 或多态关系，确定数据权威来源及生命周期。
+4. **设计物理结构**：确定表、字段、主键、类型、NULL、默认值、注释、约束和关联策略。
+5. **选择 ID 策略**：常规单库默认采用数值型自增主键；分布式生成或多写入节点场景按需评估 Snowflake、UUIDv7 等有序 ID。详细规则见 [references/id-strategy.md](references/id-strategy.md)。
+6. **设计索引与访问路径**：使用实际或预期 SQL 推导索引；重要查询应说明索引服务的查询模式。
+7. **评估特殊要求**：仅在业务需要时设计软删除、乐观锁、账务流水、多租户、分区、分库分表、读写分离及高可用。
+8. **生成并审查 DDL**：按目标数据库版本生成表、索引、约束及注释；检查兼容性、数据完整性、并发风险和迁移影响。
+9. **验证并交付**：能够连接目标数据库时执行验证；不能执行时，只能说明静态审查结果，不得声称已实际验证。
+
+## 四、渐进式披露：按需读取参考文件
+
+**不要默认读取全部参考文件。** 先根据当前任务判断需要的知识，再只读取相关文件；一个任务涉及多个主题时才组合读取。
+
+| 当前任务 | 按需读取 |
 | --- | --- |
-| Entities, normalization, fields, relationships, NULL, constraints, soft deletion | [Modeling and schema](references/modeling-and-schema.md) |
-| Primary keys, identities, Snowflake, UUIDv7, shard keys | [ID strategy](references/id-strategy.md) |
-| MySQL types, InnoDB, time, indexes, version differences | [MySQL](references/mysql.md) |
-| PostgreSQL types, identity, UUID, time, indexes, version differences | [PostgreSQL](references/postgresql.md) |
-| Indexes, query plans, pagination, IN and EXISTS | [Indexing and queries](references/indexing-and-query.md) |
-| Transactions, concurrency, UPSERT, idempotency, money and ledgers | [Transactions and business data](references/transactions-and-business-data.md) |
-| Service boundaries, tenants, partitioning, sharding, replication, migrations | [Architecture and migration](references/architecture-and-migration.md) |
+| 业务领域、范式、表/字段、关系、NULL、软删除、约束 | [references/modeling-and-schema.md](references/modeling-and-schema.md) |
+| 主键、自增、Snowflake、UUIDv7、分布式 ID、分片键 | [references/id-strategy.md](references/id-strategy.md) |
+| MySQL 类型、DDL、InnoDB、时间、索引和版本差异 | [references/mysql.md](references/mysql.md) |
+| PostgreSQL 类型、DDL、Identity、UUID、索引和版本差异 | [references/postgresql.md](references/postgresql.md) |
+| 索引、联合索引、执行计划、分页、IN/EXISTS | [references/indexing-and-query.md](references/indexing-and-query.md) |
+| 事务、锁、并发、UPSERT、幂等、金额、资产和账务流水 | [references/transactions-and-business-data.md](references/transactions-and-business-data.md) |
+| 多租户、服务边界、分区、分库分表、集群、在线迁移 | [references/architecture-and-migration.md](references/architecture-and-migration.md) |
 
-For an ordinary single-database schema, start with modeling, ID strategy, and the target database reference.
+如果任务仅涉及普通单库建表，通常读取 `modeling-and-schema.md`、`id-strategy.md` 以及目标数据库对应的参考文件即可。只有涉及查询性能、事务或架构扩展时，才继续加载相应文件。
 
-## Deliver and review
+## 五、交付要求
 
-As appropriate to the task, provide requirements and assumptions, entity boundaries and relationships, a table list and data dictionary, constraints and index rationale, version-compatible DDL with comments, and integrity, concurrency, performance, and migration risks. Clearly identify unresolved business decisions.
+根据任务规模输出适用内容，不为凑格式添加无关章节。
 
-Review entity cardinality and lifecycle; naming; types, precision, units, nullability and defaults; compatible key types; uniqueness and referential integrity; soft-delete and recovery behavior; query-driven indexes; time zones and precision; transactions, idempotency and concurrency; tenant isolation and routing; and database-version compatibility. Do not present an unexecuted migration or SQL as validated.
+1. **需求理解与假设**：说明业务实体、关系、关键约束及待确认事项。
+2. **模型说明**：说明领域边界、表职责及关联关系。
+3. **表结构清单**：列出表名、职责及主要关联。
+4. **字段数据字典**：至少包含字段名、类型、是否允许 NULL、默认值及业务说明；必要时补充精度、单位和取值范围。
+5. **约束与索引**：说明主键、唯一约束、外键策略、检查约束及索引目的。
+6. **完整 DDL**：根据目标数据库和版本生成可执行语法，并包含表注释、字段注释及必要约束和索引。
+7. **风险与迁移说明**：指出完整性、并发、性能、兼容性和在线变更风险。
+
+## 六、最终审查清单
+
+- [ ] 业务实体、领域边界、关系基数和数据生命周期明确。
+- [ ] 表名、字段名及命名风格统一。
+- [ ] 字段类型、长度、精度、NULL 和默认值符合业务语义。
+- [ ] 主键策略适合当前部署形态；主键与关联字段类型一致。
+- [ ] 分布式 ID 不被误认为严格连续；生成机制具备唯一性保障。
+- [ ] 表和字段注释能够表达真实业务含义、单位及枚举值。
+- [ ] 必要的主键、唯一、非空、检查及引用完整性约束已设计。
+- [ ] 软删除没有与唯一性、查询过滤及恢复策略冲突。
+- [ ] 索引对应真实查询模式，没有明显重复或无依据的索引。
+- [ ] 时间语义、时区和精度统一。
+- [ ] 事务、并发、幂等要求明确；适用时评估原子 UPSERT，并明确冲突目标及更新字段。
+- [ ] 多租户隔离、分片路由和数据归属没有遗漏。
+- [ ] 没有无依据的冗余、分区、分库分表或集群设计。
+- [ ] DDL 与目标数据库产品、版本及存储引擎兼容。
+- [ ] 未经实际执行的 SQL 或迁移方案未被描述为已验证。
