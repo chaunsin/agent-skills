@@ -87,61 +87,6 @@ For planning, use `grill` to examine unresolved decisions, `prd` to define produ
 
 Before creating or changing a skill, follow [Skill Authoring and Maintenance](docs/skill-authoring.md). The guide covers concise and complete content, readable structure, progressive disclosure, evidence for changes, portability, security assessment, and validation.
 
-## Repository Structure
-
-```text
-agent-skills/
-├── docs/
-│   └── skill-authoring.md   # Skill authoring and maintenance rules
-├── skills/                  # Skill directories
-│   ├── database-design/     # Relational models, schema review, and migrations
-│   │   ├── SKILL.md         # Chinese instructions: workflow, references, and validation
-│   │   └── references/      # Modeling, IDs, dialects, indexes, transactions, architecture
-│   ├── drizzle-migration-conflict/ # Drizzle Kit migration conflict repair and prevention
-│   │   ├── SKILL.md         # Skill entry point
-│   │   ├── references/      # Conflict playbook, CI policy, report template, sources
-│   │   └── scripts/         # Read-only migration structure checker
-│   ├── git-stack/           # Git commits, pushes, conflicts, and worktrees
-│   │   ├── SKILL.md         # Skill entry point
-│   │   ├── commit.md        # Commit and push workflow
-│   │   ├── conflict.md      # Merge and rebase conflict handling
-│   │   ├── validation.md    # Validation reuse and failure classification
-│   │   └── worktree.md      # Worktree creation and reuse
-│   ├── grill/               # Decision interviews and design trees
-│   │   └── SKILL.md         # Skill entry point
-│   ├── hugo-to-markdown/    # Hugo docs and content to standard Markdown
-│   │   ├── SKILL.md         # Skill entry point
-│   │   ├── agents/          # Agent configuration
-│   │   ├── references/      # Hugo conversion rules
-│   │   └── scripts/         # Rule inventory and validation helpers
-│   ├── postgresql-cli/      # PostgreSQL interactive terminal (psql)
-│   │   ├── SKILL.md         # Skill entry point
-│   │   └── references/      # Detailed reference files
-│   ├── prd/                 # Product requirements
-│   │   ├── SKILL.md         # Skill entry point
-│   │   └── reference/       # PRD document template
-│   ├── pre-release-review/  # Production release readiness review
-│   │   ├── SKILL.md         # Skill entry point
-│   │   └── references/      # Checklist and report template
-│   ├── rclone-cli/          # Rclone cloud storage manager
-│   │   ├── SKILL.md         # Skill entry point
-│   │   ├── references/      # Detailed reference files
-│   │   └── scripts/         # Helper scripts
-│   ├── redis-cli/           # Redis command-line interface
-│   │   ├── SKILL.md         # Skill entry point
-│   │   └── references/      # Detailed reference files
-│   ├── to-spec/             # Technical specifications from PRD or explicitly selected sources
-│   │   ├── SKILL.md         # Skill entry point (Chinese)
-│   │   └── reference/       # SPEC document template
-│   └── to-task/             # Task decomposition and planning
-│       ├── SKILL.md         # Skill entry point
-│       ├── references/      # Task format and matching JSON/Markdown examples
-│       └── scripts/         # Read-only task plan validator
-├── CLAUDE.md                # Claude Code workspace instructions
-├── LICENSE                  # Apache 2.0
-└── README.md                # This file
-```
-
 ## License
 
 [Apache License 2.0](LICENSE)
