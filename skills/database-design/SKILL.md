@@ -1,9 +1,9 @@
 ---
 name: database-design
-description: 关系型数据库建模与建表设计技能，适用于 MySQL、PostgreSQL 等关系型数据库。用于业务领域建模、表结构与字段设计、主键和分布式 ID 选型、关系约束、索引规划、事务并发、特殊业务数据建模、数据库架构扩展、DDL 生成及结构迁移。新建或修改数据库结构、评审数据模型时使用。
+description: 关系型数据库建模与建表设计技能，适用于 MySQL、PostgreSQL 等关系型数据库。用于业务领域建模、表结构与字段设计、主键和分布式 ID 选型、关系约束、索引规划、事务并发、特殊业务数据建模、数据库架构扩展、DDL 生成及结构迁移，以及触发器设计、编写与评审。新建或修改数据库结构、评审数据模型或触发器时使用。
 metadata:
   author: chaunsin
-  version: "0.1"
+  version: "0.1.1"
 ---
 
 # 关系型数据库建模与建表
@@ -51,7 +51,9 @@ metadata:
 | MySQL 类型、DDL、InnoDB、时间、索引和版本差异 | [references/mysql.md](references/mysql.md) |
 | PostgreSQL 类型、DDL、Identity、UUID、索引和版本差异 | [references/postgresql.md](references/postgresql.md) |
 | 索引、联合索引、执行计划、分页、IN/EXISTS | [references/indexing-and-query.md](references/indexing-and-query.md) |
-| 事务、锁、并发、UPSERT、幂等、金额、资产和账务流水 | [references/transactions-and-business-data.md](references/transactions-and-business-data.md) |
+| 事务、锁、并发、UPSERT、幂等 | [references/transactions-and-concurrency.md](references/transactions-and-concurrency.md) |
+| 金额、资产、账务、库存、积分、发放与状态机 | [references/business-data.md](references/business-data.md) |
+| 触发器使用、编写、数据库差异、测试与迁移 | [references/triggers.md](references/triggers.md) |
 | 多租户、服务边界、分区、分库分表、集群、在线迁移 | [references/architecture-and-migration.md](references/architecture-and-migration.md) |
 
 如果任务仅涉及普通单库建表，通常读取 `modeling-and-schema.md`、`id-strategy.md` 以及目标数据库对应的参考文件即可。只有涉及查询性能、事务或架构扩展时，才继续加载相应文件。
@@ -80,7 +82,7 @@ metadata:
 - [ ] 软删除没有与唯一性、查询过滤及恢复策略冲突。
 - [ ] 索引对应真实查询模式，没有明显重复或无依据的索引。
 - [ ] 时间语义、时区和精度统一。
-- [ ] 事务、并发、幂等要求明确；适用时评估原子 UPSERT，并明确冲突目标及更新字段。
+- [ ] 事务、并发、幂等要求明确；适用时评估原子 UPSERT，并明确冲突目标及更新字段；触发器遵循默认不用于常规业务、短小单一职责、禁止外部副作用及版本化测试迁移。
 - [ ] 多租户隔离、分片路由和数据归属没有遗漏。
 - [ ] 没有无依据的冗余、分区、分库分表或集群设计。
 - [ ] DDL 与目标数据库产品、版本及存储引擎兼容。

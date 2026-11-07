@@ -20,7 +20,7 @@ Skill 是一个包含 `SKILL.md` 入口文件和可选辅助资源的目录，�
 
 | Skill                            | 说明                                                                                                                                                     |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [database-design][database-design] | 关系型数据库设计与评审 —— 面向 MySQL、PostgreSQL 等数据库，覆盖模型、字段、主键、约束、索引、事务规则、架构及兼容的 DDL/迁移 |
+| [database-design][database-design] | 关系型数据库设计与评审 —— 面向 MySQL、PostgreSQL 等数据库，覆盖模型、字段、主键、约束、索引、事务规则、触发器、架构及兼容的 DDL/迁移 |
 | [drizzle-migration-conflict][drizzle-migration-conflict] | Drizzle Kit 迁移冲突诊断与团队协作工作流 —— 检查 `_journal.json`、snapshot、迁移目录、merge conflict、`drizzle-kit check` 与 CI 预防方案 |
 | [git-stack][git-stack] | Git 工作流 —— 提交与推送更改、处理合并或变基冲突、创建或复用 worktree，明确操作范围并复用有效验证结果 |
 | [grill][grill] | 决策访谈 —— 通过逐轮追问检验计划、想法或设计，用设计树梳理决策依赖，澄清假设并达成共识 |

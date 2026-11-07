@@ -20,7 +20,7 @@ Each skill lives in its own directory under `skills/<name>/` and includes:
 
 | Skill                            | Description                                                                                                                                                                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [database-design][database-design] | Relational database design and review — models, fields, keys, constraints, indexes, transaction rules, architecture, and compatible DDL/migrations for MySQL, PostgreSQL, and other relational databases |
+| [database-design][database-design] | Relational database design and review — models, fields, keys, constraints, indexes, transaction rules, trigger design, architecture, and compatible DDL/migrations for MySQL, PostgreSQL, and other relational databases |
 | [drizzle-migration-conflict][drizzle-migration-conflict] | Drizzle Kit migration conflict diagnosis and team workflow guidance - inspect `_journal.json`, snapshots, migration folders, merge conflicts, `drizzle-kit check`, and CI prevention |
 | [git-stack][git-stack] | Git workflows — commit and push changes, handle merge or rebase conflicts, and create or reuse worktrees, with scoped changes and reusable validation results |
 | [grill][grill] | Decision interviews — examine a plan, idea, or design through successive questions, track dependent decisions in a design tree, and clarify assumptions until consensus |
