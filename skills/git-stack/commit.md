@@ -84,6 +84,8 @@ git log --oneline <target>..<source>
 [可选脚注，例如 Closes #123 或 BREAKING CHANGE]
 ```
 
+包含破坏性变更时，在类型或范围后、冒号前加 `!`，例如 `feat(接口增强)!: 调整不兼容的接口行为`。
+
 常见类型包括 `feat`、`fix`、`docs`、`style`、`refactor`、`ci`、`chore`、`perf`。
 描述更改后的具体行为，避免使用“修复 bug”“更新”“添加”“解决冲突”等含糊信息，
 也不使用纯标点或数字占位。
