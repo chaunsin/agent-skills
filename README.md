@@ -31,7 +31,7 @@ Each skill lives in its own directory under `skills/<name>/` and includes:
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) cloud storage manager reference — terminal-based upload, download, sync, copy, move, mount, backup, filtering, encryption, bisync, and multi-provider remote management      |
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface reference — Redis querying, keyspace inspection, monitoring, latency analysis, ACL and cluster management, scripting, and module workflows |
 | [to-spec][to-spec] | Technical specifications — use PRD content by default; also accept explicitly supplied or selected ADRs, interviews, and Q&A documents, with source traceability, implementation contracts, and verification criteria |
-| [to-task][to-task] | Task decomposition — create verifiable task plans with dependencies and acceptance criteria; ask where to save them, defaulting to feature directories with one Markdown file per task, with support for GitHub/GitLab Issues and explicitly selected available task systems |
+| [to-task][to-task] | Task decomposition — create and review verifiable plans with necessary direct dependencies, acceptance criteria, and parallelism checks; ask where to save them, defaulting to feature directories with one Markdown file per task, with support for GitHub/GitLab Issues and explicitly selected available task systems |
 
 ## Installation
 

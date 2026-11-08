@@ -1,9 +1,42 @@
-# 最小任务 Markdown 示例
+# 最小任务记录示例
 
-本例对应[主文件](../SKILL.md#54-本地结构化数据tasksjson)中的单任务 JSON。
+本例提供同一单任务的 JSON 与 Markdown，采用[本地记录布局](local-records.md)。
 实际保存位置为 `project-root/task-plan/export-feedback/001-export-failure-feedback.md`，
 同目录另存轻量索引和完整 JSON。无需启用需求映射、验收 ID 或计划修订。
 示例中的索引链接是生成后相对于任务文件的链接，不是本参考文件的链接。
+
+## JSON
+
+```json
+{
+  "version": "1.0",
+  "project": "记录导出",
+  "goal": "为已有 CSV 导出流程补充明确的失败反馈",
+  "tasks": [
+    {
+      "id": "EXP-001",
+      "title": "完善 CSV 导出失败反馈",
+      "type": "implementation",
+      "priority": "P2",
+      "status": "pending",
+      "goal": "下载失败时用户能看到错误，不会误以为导出成功",
+      "scope": ["处理现有导出流程的失败反馈"],
+      "out_of_scope": ["修改导出字段和登录方式"],
+      "inputs": ["用户要求：导出失败时显示错误提示", "项目现有导出交互和错误反馈约定"],
+      "references": [],
+      "outputs": ["页面反馈变更及针对性验证"],
+      "constraints": ["沿用现有接口和登录流程"],
+      "acceptance": [{"condition": "下载失败显示可读错误，且不显示下载成功"}],
+      "verification": [{"method": "模拟导出失败，检查错误提示及成功提示互斥"}],
+      "depends_on": []
+    }
+  ],
+  "open_questions": [],
+  "assumptions": []
+}
+```
+
+## Markdown
 
 ```markdown
 # EXP-001：完善 CSV 导出失败反馈

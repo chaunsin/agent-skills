@@ -31,7 +31,7 @@ Skill 是一个包含 `SKILL.md` 入口文件和可选辅助资源的目录，�
 | [rclone-cli][rclone-cli]         | [Rclone](https://rclone.org/) 云存储管理器参考 — 终端中的上传、下载、同步、复制、移动、挂载、备份、过滤、加密、双向同步及多云远程管理                         |
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) 命令行界面参考 — Redis 查询、keyspace 检查、监控、延迟分析、ACL 与集群管理、脚本编写及模块工作流      |
 | [to-spec][to-spec] | 技术规格生成 —— 默认使用 PRD 内容，也支持用户明确提供或指定的 ADR、访谈、QA 文档，保留来源追溯并明确实施契约和验证标准 |
-| [to-task][to-task] | 任务拆解 —— 生成依赖与验收明确的任务计划；保存前询问记录方式，默认在本地按功能分目录、每个任务一份 Markdown，也支持 GitHub/GitLab Issues 及用户明确指定的可用任务系统 |
+| [to-task][to-task] | 任务拆解 —— 生成并复核任务计划，明确必要的直接依赖与验收标准，检查并行潜力及不必要的串行化；保存前询问记录方式，默认在本地按功能分目录、每个任务一份 Markdown，也支持 GitHub/GitLab Issues 及用户明确指定的可用任务系统 |
 
 ## 安装
 
