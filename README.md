@@ -20,6 +20,7 @@ Each skill lives in its own directory under `skills/<name>/` and includes:
 
 | Skill                            | Description                                                                                                                                                                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [cache-engineering][cache-engineering] | Generic cache engineering — design, implement, refactor, and review Redis, Memcached, in-process, and multi-level caches; cover read/write strategies, keys, TTL, consistency, stampede/penetration/avalanche, degradation, and performance |
 | [database-design][database-design] | Relational database design and review — models, fields, keys, constraints, indexes, transaction rules, trigger design, architecture, and compatible DDL/migrations for MySQL, PostgreSQL, and other relational databases |
 | [drizzle-migration-conflict][drizzle-migration-conflict] | Drizzle Kit migration conflict diagnosis and team workflow guidance - inspect `_journal.json`, snapshots, migration folders, merge conflicts, `drizzle-kit check`, and CI prevention |
 | [git-stack][git-stack] | Git workflows — commit and push changes, handle merge or rebase conflicts, and create or reuse worktrees, with scoped changes and reusable validation results |
@@ -82,7 +83,7 @@ Once installed, skills activate automatically based on their trigger keywords (d
 
 For example, with the postgresql-cli skill installed, asking "how to list all tables in psql" or "psql \d commands" will trigger the skill.
 
-For planning, use `grill` to examine unresolved decisions, `prd` to define product requirements, `to-spec` to define technical contracts, and `to-task` to produce a verifiable task plan. Choose the skill for the work you need; this is not a mandatory sequence. `to-spec` defaults to PRD content and also accepts other explicitly supplied or selected sources. Use `git-stack` when you need to commit, push, resolve conflicts, or prepare a worktree. When something is unclear and you want an objective, newcomer-friendly explanation, use `what` — it only answers and never modifies files.
+For planning, use `grill` to examine unresolved decisions, `prd` to define product requirements, `to-spec` to define technical contracts, and `to-task` to produce a verifiable task plan. Choose the skill for the work you need; this is not a mandatory sequence. `to-spec` defaults to PRD content and also accepts other explicitly supplied or selected sources. Use `git-stack` when you need to commit, push, resolve conflicts, or prepare a worktree. For cache design, correctness review, or incident analysis, use `cache-engineering` — it covers consistency, invalidation, and failure handling; plain Redis command lookups belong to `redis-cli`. When something is unclear and you want an objective, newcomer-friendly explanation, use `what` — it only answers and never modifies files.
 
 ## Contributing
 
@@ -92,6 +93,7 @@ Before creating or changing a skill, follow [Skill Authoring and Maintenance](do
 
 [Apache License 2.0](LICENSE)
 
+[cache-engineering]: skills/cache-engineering/SKILL.md
 [database-design]: skills/database-design/SKILL.md
 [drizzle-migration-conflict]: skills/drizzle-migration-conflict/SKILL.md
 [git-stack]: skills/git-stack/SKILL.md

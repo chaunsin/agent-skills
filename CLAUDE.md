@@ -26,6 +26,7 @@ Before creating, modifying, or reviewing a skill, read and follow [Skill Authori
 
 | Skill              | Topic                                                                                                                                                            |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cache-engineering` | Generic cache engineering — design, implement, refactor, and review Redis, Memcached, in-process, and multi-level caches; cover read/write strategies, keys, TTL, consistency, stampede/penetration/avalanche, degradation, and performance |
 | `database-design` | Relational database modeling and schema review — keys, constraints, indexes, transactions, architecture, database-specific DDL, and incremental migrations |
 | `drizzle-migration-conflict` | Drizzle Kit migration conflict diagnosis and team workflow guidance - inspect `_journal.json`, snapshots, migration folders, merge conflicts, `drizzle-kit check`, and CI prevention |
 | `git-stack` | Git workflows — commits, pushes, merge or rebase conflicts, worktree creation and reuse, scoped changes, and reusable validation results |

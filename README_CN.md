@@ -20,6 +20,7 @@ Skill 是一个包含 `SKILL.md` 入口文件和可选辅助资源的目录，�
 
 | Skill                            | 说明                                                                                                                                                     |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [cache-engineering][cache-engineering] | 通用缓存工程实践 —— 设计、实现、重构或审查 Redis、Memcached、进程内及多级缓存，覆盖读写策略、缓存键、TTL、一致性、击穿/穿透/雪崩、故障降级及性能优化 |
 | [database-design][database-design] | 关系型数据库设计与评审 —— 面向 MySQL、PostgreSQL 等数据库，覆盖模型、字段、主键、约束、索引、事务规则、触发器、架构及兼容的 DDL/迁移 |
 | [drizzle-migration-conflict][drizzle-migration-conflict] | Drizzle Kit 迁移冲突诊断与团队协作工作流 —— 检查 `_journal.json`、snapshot、迁移目录、merge conflict、`drizzle-kit check` 与 CI 预防方案 |
 | [git-stack][git-stack] | Git 工作流 —— 提交与推送更改、处理合并或变基冲突、创建或复用 worktree，明确操作范围并复用有效验证结果 |
@@ -82,7 +83,7 @@ cp -r skills/<skill-name> ~/.claude/skills/
 
 例如，安装 postgresql-cli skill 后，询问 "how to list all tables in psql" 或 "psql \d 命令" 即会触发该 skill。
 
-规划工作时，可以用 `grill` 盘问未明确的决策，用 `prd` 定义产品需求，用 `to-spec` 明确技术契约，用 `to-task` 生成可验证的任务计划。按当前需要选择技能，无需依次执行全部流程；`to-spec` 默认接收 PRD 内容，也支持明确提供或指定的其他来源。需要提交、推送、解决冲突或准备 worktree 时，使用 `git-stack`。遇到不理解的内容、希望获得客观且新手友好的说明时，使用 `what` —— 它只作答，不修改任何文件。
+规划工作时，可以用 `grill` 盘问未明确的决策，用 `prd` 定义产品需求，用 `to-spec` 明确技术契约，用 `to-task` 生成可验证的任务计划。按当前需要选择技能，无需依次执行全部流程；`to-spec` 默认接收 PRD 内容，也支持明确提供或指定的其他来源。需要提交、推送、解决冲突或准备 worktree 时，使用 `git-stack`。涉及缓存设计、正确性审查或故障分析时使用 `cache-engineering`，它覆盖一致性、失效与故障处理；单纯的 Redis 命令查询应交给 `redis-cli`。遇到不理解的内容、希望获得客观且新手友好的说明时，使用 `what` —— 它只作答，不修改任何文件。
 
 ## 贡献指南
 
@@ -92,6 +93,7 @@ cp -r skills/<skill-name> ~/.claude/skills/
 
 [Apache License 2.0](LICENSE)
 
+[cache-engineering]: skills/cache-engineering/SKILL.md
 [database-design]: skills/database-design/SKILL.md
 [drizzle-migration-conflict]: skills/drizzle-migration-conflict/SKILL.md
 [git-stack]: skills/git-stack/SKILL.md
