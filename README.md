@@ -32,6 +32,7 @@ Each skill lives in its own directory under `skills/<name>/` and includes:
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface reference — Redis querying, keyspace inspection, monitoring, latency analysis, ACL and cluster management, scripting, and module workflows |
 | [to-spec][to-spec] | Technical specifications — use PRD content by default; also accept explicitly supplied or selected ADRs, interviews, and Q&A documents, with source traceability, implementation contracts, and verification criteria |
 | [to-task][to-task] | Task decomposition — create and review verifiable plans with necessary direct dependencies, acceptance criteria, and parallelism checks; ask where to save them, defaulting to feature directories with one Markdown file per task, with support for GitHub/GitLab Issues and explicitly selected available task systems |
+| [what][what] | Newcomer-friendly explanations — clarify business logic, code mechanics, data flow, and object lifecycles from session context, analyze the user's real intent objectively, and offer decision advice when needed; use when the user says they don't understand or asks "what" / "speak plainly" |
 
 ## Installation
 
@@ -81,7 +82,7 @@ Once installed, skills activate automatically based on their trigger keywords (d
 
 For example, with the postgresql-cli skill installed, asking "how to list all tables in psql" or "psql \d commands" will trigger the skill.
 
-For planning, use `grill` to examine unresolved decisions, `prd` to define product requirements, `to-spec` to define technical contracts, and `to-task` to produce a verifiable task plan. Choose the skill for the work you need; this is not a mandatory sequence. `to-spec` defaults to PRD content and also accepts other explicitly supplied or selected sources. Use `git-stack` when you need to commit, push, resolve conflicts, or prepare a worktree.
+For planning, use `grill` to examine unresolved decisions, `prd` to define product requirements, `to-spec` to define technical contracts, and `to-task` to produce a verifiable task plan. Choose the skill for the work you need; this is not a mandatory sequence. `to-spec` defaults to PRD content and also accepts other explicitly supplied or selected sources. Use `git-stack` when you need to commit, push, resolve conflicts, or prepare a worktree. When something is unclear and you want an objective, newcomer-friendly explanation, use `what` — it only answers and never modifies files.
 
 ## Contributing
 
@@ -103,3 +104,4 @@ Before creating or changing a skill, follow [Skill Authoring and Maintenance](do
 [redis-cli]: skills/redis-cli/SKILL.md
 [to-spec]: skills/to-spec/SKILL.md
 [to-task]: skills/to-task/SKILL.md
+[what]: skills/what/SKILL.md

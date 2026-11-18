@@ -38,6 +38,7 @@ Before creating, modifying, or reviewing a skill, read and follow [Skill Authori
 | `redis-cli`      | [Redis](https://redis.io/docs/latest/develop/tools/cli/) command-line interface — data querying, key scanning, server monitoring, latency analysis, vector search, ACL management, cluster management, scripting |
 | `to-spec` | Technical specifications — PRD content by default, with explicitly supplied or selected ADRs, interviews, and Q&A documents supported; source traceability, implementation contracts, and verification criteria |
 | `to-task` | Task decomposition — define verifiable work items, priorities, dependencies, and acceptance criteria; save locally or to a user-selected task system without executing or scheduling the work |
+| `what` | Newcomer-friendly explanations — clarify business logic, code mechanics, data flow, and object lifecycles from session context, analyze the user's real intent objectively, and offer decision advice when needed |
 
 ## Development Commands
 

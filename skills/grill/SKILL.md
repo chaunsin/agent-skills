@@ -2,6 +2,9 @@
 name: grill
 description: 对用户进行无情盘问，追问其计划、决定或想法。适用于用户想要检验自身思维能力，或使用任何带有“盘问”字眼的触发词的情况。
 user-invocable: "true"
+metadata:
+  author: chaunsin
+  version: "0.1"
 ---
 # grill
 

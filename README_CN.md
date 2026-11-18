@@ -32,6 +32,7 @@ Skill 是一个包含 `SKILL.md` 入口文件和可选辅助资源的目录，�
 | [redis-cli][redis-cli]           | [Redis](https://redis.io/docs/latest/develop/tools/cli/) 命令行界面参考 — Redis 查询、keyspace 检查、监控、延迟分析、ACL 与集群管理、脚本编写及模块工作流      |
 | [to-spec][to-spec] | 技术规格生成 —— 默认使用 PRD 内容，也支持用户明确提供或指定的 ADR、访谈、QA 文档，保留来源追溯并明确实施契约和验证标准 |
 | [to-task][to-task] | 任务拆解 —— 生成并复核任务计划，明确必要的直接依赖与验收标准，检查并行潜力及不必要的串行化；保存前询问记录方式，默认在本地按功能分目录、每个任务一份 Markdown，也支持 GitHub/GitLab Issues 及用户明确指定的可用任务系统 |
+| [what][what] | 新手向答疑 —— 结合会话上下文解释业务逻辑、代码原理、数据流转与对象生命周期，客观分析真实意图并给出决策建议；当用户表示不明白或说“what”“说人话”等时使用 |
 
 ## 安装
 
@@ -81,7 +82,7 @@ cp -r skills/<skill-name> ~/.claude/skills/
 
 例如，安装 postgresql-cli skill 后，询问 "how to list all tables in psql" 或 "psql \d 命令" 即会触发该 skill。
 
-规划工作时，可以用 `grill` 盘问未明确的决策，用 `prd` 定义产品需求，用 `to-spec` 明确技术契约，用 `to-task` 生成可验证的任务计划。按当前需要选择技能，无需依次执行全部流程；`to-spec` 默认接收 PRD 内容，也支持明确提供或指定的其他来源。需要提交、推送、解决冲突或准备 worktree 时，使用 `git-stack`。
+规划工作时，可以用 `grill` 盘问未明确的决策，用 `prd` 定义产品需求，用 `to-spec` 明确技术契约，用 `to-task` 生成可验证的任务计划。按当前需要选择技能，无需依次执行全部流程；`to-spec` 默认接收 PRD 内容，也支持明确提供或指定的其他来源。需要提交、推送、解决冲突或准备 worktree 时，使用 `git-stack`。遇到不理解的内容、希望获得客观且新手友好的说明时，使用 `what` —— 它只作答，不修改任何文件。
 
 ## 贡献指南
 
@@ -103,3 +104,4 @@ cp -r skills/<skill-name> ~/.claude/skills/
 [redis-cli]: skills/redis-cli/SKILL.md
 [to-spec]: skills/to-spec/SKILL.md
 [to-task]: skills/to-task/SKILL.md
+[what]: skills/what/SKILL.md
